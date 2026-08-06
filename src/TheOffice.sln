@@ -1,0 +1,61 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Application", "Application", "{E849C393-A4E0-4308-9D27-8C0246493F6C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TheOffice.Application", "Application\TheOffice.Application\TheOffice.Application.csproj", "{BC55C2D4-633A-4FDF-B19D-1E31D00E67C7}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Domain", "Domain", "{762FED6C-6394-446A-AB87-A9DA70C487FF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TheOffice.Domain", "Domain\TheOffice.Domain\TheOffice.Domain.csproj", "{A926AEF7-7A68-494D-AE81-035392C0BF89}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Infrastructure", "Infrastructure", "{BF1654E4-8DFE-43B5-8E0A-23FD317DBC91}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TheOffice.Adapters", "Infrastructure\TheOffice.Adapters\TheOffice.Adapters.csproj", "{DDAE3639-60A8-495D-A5ED-AFD89459C933}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TheOffice.Persistence", "Infrastructure\TheOffice.Persistence\TheOffice.Persistence.csproj", "{77B05F49-6A58-4916-B176-90EDCE915C34}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Presentation", "Presentation", "{29FE7C6B-0D36-43B0-B936-CA203C82D3E7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TheOffice.Api", "Presentation\TheOffice.Api\TheOffice.Api.csproj", "{33C990A4-3413-4EE3-A706-B43F915A2E03}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BC55C2D4-633A-4FDF-B19D-1E31D00E67C7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BC55C2D4-633A-4FDF-B19D-1E31D00E67C7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BC55C2D4-633A-4FDF-B19D-1E31D00E67C7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BC55C2D4-633A-4FDF-B19D-1E31D00E67C7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A926AEF7-7A68-494D-AE81-035392C0BF89}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A926AEF7-7A68-494D-AE81-035392C0BF89}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A926AEF7-7A68-494D-AE81-035392C0BF89}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A926AEF7-7A68-494D-AE81-035392C0BF89}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DDAE3639-60A8-495D-A5ED-AFD89459C933}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DDAE3639-60A8-495D-A5ED-AFD89459C933}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DDAE3639-60A8-495D-A5ED-AFD89459C933}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DDAE3639-60A8-495D-A5ED-AFD89459C933}.Release|Any CPU.Build.0 = Release|Any CPU
+		{77B05F49-6A58-4916-B176-90EDCE915C34}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{77B05F49-6A58-4916-B176-90EDCE915C34}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{77B05F49-6A58-4916-B176-90EDCE915C34}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{77B05F49-6A58-4916-B176-90EDCE915C34}.Release|Any CPU.Build.0 = Release|Any CPU
+		{33C990A4-3413-4EE3-A706-B43F915A2E03}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{33C990A4-3413-4EE3-A706-B43F915A2E03}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{33C990A4-3413-4EE3-A706-B43F915A2E03}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{33C990A4-3413-4EE3-A706-B43F915A2E03}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{BC55C2D4-633A-4FDF-B19D-1E31D00E67C7} = {E849C393-A4E0-4308-9D27-8C0246493F6C}
+		{A926AEF7-7A68-494D-AE81-035392C0BF89} = {762FED6C-6394-446A-AB87-A9DA70C487FF}
+		{DDAE3639-60A8-495D-A5ED-AFD89459C933} = {BF1654E4-8DFE-43B5-8E0A-23FD317DBC91}
+		{77B05F49-6A58-4916-B176-90EDCE915C34} = {BF1654E4-8DFE-43B5-8E0A-23FD317DBC91}
+		{33C990A4-3413-4EE3-A706-B43F915A2E03} = {29FE7C6B-0D36-43B0-B936-CA203C82D3E7}
+	EndGlobalSection
+EndGlobal

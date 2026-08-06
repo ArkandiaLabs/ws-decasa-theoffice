@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Asp.Versioning.Mvc" Version="10.2.0" />
+    <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="10.2.0" />
+    <PackageReference Include="Asp.Versioning.OpenApi" Version="10.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.10" />
+    <!-- Referencia directa: eleva la version transitiva de Microsoft.AspNetCore.OpenApi (2.0.0, con CVE). -->
+    <PackageReference Include="Microsoft.OpenApi" Version="2.11.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Scalar.AspNetCore" Version="2.16.17" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Application\TheOffice.Application\TheOffice.Application.csproj" />
+    <ProjectReference Include="..\..\Infrastructure\TheOffice.Adapters\TheOffice.Adapters.csproj" />
+    <ProjectReference Include="..\..\Infrastructure\TheOffice.Persistence\TheOffice.Persistence.csproj" />
+  </ItemGroup>
+
+</Project>

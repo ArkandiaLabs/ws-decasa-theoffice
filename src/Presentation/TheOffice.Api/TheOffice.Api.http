@@ -1,0 +1,56 @@
+@host = http://localhost:5226
+
+### Catalogo: primera pagina
+GET {{host}}/api/v1/products
+Accept: application/json
+
+### Catalogo: segunda pagina
+GET {{host}}/api/v1/products?page=2&pageSize=6
+Accept: application/json
+
+### Catalogo: filtro por categoria
+GET {{host}}/api/v1/products?category=tecnologia
+Accept: application/json
+
+### Catalogo: busqueda por texto
+GET {{host}}/api/v1/products?search=silla
+Accept: application/json
+
+### Detalle de producto
+GET {{host}}/api/v1/products/PRD-005
+Accept: application/json
+
+### Crear producto
+POST {{host}}/api/v1/products
+Content-Type: application/json
+
+{
+  "publicId": "PRD-017",
+  "name": "Tablero acrilico 120 x 90 cm",
+  "description": "Tablero acrilico con marco de aluminio y bandeja portamarcadores.",
+  "price": 215000,
+  "imageUrl": "https://placehold.co/600x400/png?text=Tablero",
+  "stock": 14,
+  "categorySlug": "organizacion"
+}
+
+### Categorias
+GET {{host}}/api/v1/categories
+Accept: application/json
+
+### Detalle de cliente
+GET {{host}}/api/v1/customers/CUS-001
+Accept: application/json
+
+### Crear cliente
+POST {{host}}/api/v1/customers
+Content-Type: application/json
+
+{
+  "publicId": "CUS-004",
+  "name": "Camila Duque",
+  "email": "camila.duque@example.com",
+  "source": "Website"
+}
+
+###
