@@ -1,0 +1,224 @@
+using NSubstitute;
+
+using TheOffice.Application.DTOs;
+using TheOffice.Application.Interfaces.Adapters;
+using TheOffice.Application.Interfaces.Persistence;
+using TheOffice.Application.Services;
+using TheOffice.Domain.Entities;
+
+namespace TheOffice.Application.Tests.Services;
+
+public class ProductServiceTests
+{
+  private readonly IProductRepository _productRepository = Substitute.For<IProductRepository>();
+  private readonly ICategoryRepository _categoryRepository = Substitute.For<ICategoryRepository>();
+  private readonly INotificationAdapter _notificationAdapter = Substitute.For<INotificationAdapter>();
+  private readonly ProductService _sut;
+
+  public ProductServiceTests()
+  {
+    _sut = new ProductService(_productRepository, _categoryRepository, _notificationAdapter);
+  }
+
+  // ---------- GetAll: buscar todos ----------
+
+  [Fact]
+  public async Task GetAll_SinFiltros_DevuelvePaginaConTodosLosProductos()
+  {
+    var sillas = BuildCategory("CAT-001", "Sillas", "sillas");
+    var products = new List<Product>
+    {
+      BuildProduct("PRD-001", "Silla Ergonomica", 199.99m, 10, sillas),
+      BuildProduct("PRD-002", "Silla Gamer", 349.50m, 4, sillas)
+    };
+    _productRepository.GetPaged(1, 6, null, null).Returns(((IReadOnlyList<Product>)products, 2));
+
+    var result = await _sut.GetAll(new ProductQuery());
+
+    await _productRepository.Received(1).GetPaged(1, 6, null, null);
+    Assert.Equal(1, result.Page);
+    Assert.Equal(6, result.PageSize);
+    Assert.Equal(2, result.TotalItems);
+    Assert.Equal(1, result.TotalPages);
+    Assert.Equal(
+      new[]
+      {
+        new ProductSummaryResponse("PRD-001", "Silla Ergonomica", 199.99m, "https://img/PRD-001.jpg", 10, "Sillas", "sillas"),
+        new ProductSummaryResponse("PRD-002", "Silla Gamer", 349.50m, "https://img/PRD-002.jpg", 4, "Sillas", "sillas")
+      },
+      result.Items);
+  }
+
+  [Fact]
+  public async Task GetAll_RepositorioSinResultados_DevuelvePaginaVacia()
+  {
+    _productRepository.GetPaged(1, 6, null, null).Returns(((IReadOnlyList<Product>)[], 0));
+
+    var result = await _sut.GetAll(new ProductQuery());
+
+    Assert.Empty(result.Items);
+    Assert.Equal(0, result.TotalItems);
+    Assert.Equal(0, result.TotalPages);
+  }
+
+  [Fact]
+  public async Task GetAll_ProductoSinCategoria_DevuelveNombreYSlugVacios()
+  {
+    var products = new List<Product> { BuildProduct("PRD-003", "Mesa Suelta", 89m, 1, category: null) };
+    _productRepository.GetPaged(1, 6, null, null).Returns(((IReadOnlyList<Product>)products, 1));
+
+    var result = await _sut.GetAll(new ProductQuery());
+
+    var item = Assert.Single(result.Items);
+    Assert.Equal(string.Empty, item.CategoryName);
+    Assert.Equal(string.Empty, item.CategorySlug);
+  }
+
+  // ---------- GetAll: por categoria ----------
+
+  [Fact]
+  public async Task GetAll_ConCategoria_PropagaElSlugAlRepositorio()
+  {
+    _productRepository.GetPaged(1, 6, "sillas", null).Returns(((IReadOnlyList<Product>)[], 0));
+
+    await _sut.GetAll(new ProductQuery { Category = "sillas" });
+
+    await _productRepository.Received(1).GetPaged(1, 6, "sillas", null);
+  }
+
+  [Fact]
+  public async Task GetAll_ConCategoria_DevuelveSoloLoQueEntregaElRepositorio()
+  {
+    var mesas = BuildCategory("CAT-002", "Mesas", "mesas");
+    var products = new List<Product> { BuildProduct("PRD-010", "Mesa de Juntas", 899m, 2, mesas) };
+    _productRepository.GetPaged(1, 6, "mesas", null).Returns(((IReadOnlyList<Product>)products, 1));
+
+    var result = await _sut.GetAll(new ProductQuery { Category = "mesas" });
+
+    var item = Assert.Single(result.Items);
+    Assert.Equal("PRD-010", item.PublicId);
+    Assert.Equal("mesas", item.CategorySlug);
+    Assert.Equal(1, result.TotalItems);
+  }
+
+  [Fact]
+  public async Task GetAll_ConCategoriaYBusqueda_PropagaAmbosFiltros()
+  {
+    _productRepository.GetPaged(2, 10, "sillas", "gamer").Returns(((IReadOnlyList<Product>)[], 0));
+
+    await _sut.GetAll(new ProductQuery { Page = 2, PageSize = 10, Category = "sillas", Search = "gamer" });
+
+    await _productRepository.Received(1).GetPaged(2, 10, "sillas", "gamer");
+  }
+
+  // ---------- GetAll: normalizacion de paginacion ----------
+
+  [Theory]
+  [InlineData(0, 6, 1, 6)]     // page < 1 -> 1
+  [InlineData(-5, 6, 1, 6)]    // page negativo -> 1
+  [InlineData(2, 6, 2, 6)]     // valores validos se respetan
+  [InlineData(1, 0, 1, 1)]     // pageSize < 1 -> 1
+  [InlineData(1, 100, 1, 50)]  // pageSize > MaxPageSize -> 50
+  [InlineData(1, 50, 1, 50)]   // limite exacto
+  public async Task GetAll_NormalizaPaginacion(int page, int pageSize, int expectedPage, int expectedPageSize)
+  {
+    _productRepository.GetPaged(expectedPage, expectedPageSize, null, null)
+      .Returns(((IReadOnlyList<Product>)[], 0));
+
+    var result = await _sut.GetAll(new ProductQuery { Page = page, PageSize = pageSize });
+
+    await _productRepository.Received(1).GetPaged(expectedPage, expectedPageSize, null, null);
+    Assert.Equal(expectedPage, result.Page);
+    Assert.Equal(expectedPageSize, result.PageSize);
+  }
+
+  // ---------- GetByPublicId ----------
+
+  [Fact]
+  public async Task GetByPublicId_ProductoExistente_DevuelveResultExitoso()
+  {
+    var sillas = BuildCategory("CAT-001", "Sillas", "sillas");
+    _productRepository.GetByPublicId("PRD-001").Returns(BuildProduct("PRD-001", "Silla Ergonomica", 199.99m, 10, sillas));
+
+    var result = await _sut.GetByPublicId("PRD-001");
+
+    Assert.NotNull(result);
+    Assert.True(result.IsSuccess);
+    Assert.Null(result.Error);
+    Assert.Equal(
+      new ProductResponse(
+        "PRD-001",
+        "Silla Ergonomica",
+        "Descripcion de Silla Ergonomica",
+        199.99m,
+        "https://img/PRD-001.jpg",
+        10,
+        true,
+        new CategoryResponse("CAT-001", "Sillas", "sillas", "Descripcion de Sillas")),
+      result.Value);
+  }
+
+  [Fact]
+  public async Task GetByPublicId_ProductoSinCategoria_DevuelveCategoriaNula()
+  {
+    _productRepository.GetByPublicId("PRD-003").Returns(BuildProduct("PRD-003", "Mesa Suelta", 89m, 1, category: null));
+
+    var result = await _sut.GetByPublicId("PRD-003");
+
+    Assert.NotNull(result);
+    Assert.True(result.IsSuccess);
+    Assert.Null(result.Value!.Category);
+  }
+
+  [Fact]
+  public async Task GetByPublicId_ProductoInexistente_DevuelveNull()
+  {
+    _productRepository.GetByPublicId("PRD-999").Returns((Product?)null);
+
+    var result = await _sut.GetByPublicId("PRD-999");
+
+    // El service devuelve null (no un Result.Failure); el controller lo traduce a 404.
+    Assert.Null(result);
+  }
+
+  [Fact]
+  public async Task GetByPublicId_PropagaElPublicIdAlRepositorio()
+  {
+    _productRepository.GetByPublicId("PRD-001").Returns((Product?)null);
+
+    await _sut.GetByPublicId("PRD-001");
+
+    await _productRepository.Received(1).GetByPublicId("PRD-001");
+  }
+
+  // ---------- Helpers ----------
+
+  private static Category BuildCategory(string publicId, string name, string slug)
+  {
+    return new Category
+    {
+      Id = Guid.NewGuid(),
+      PublicId = publicId,
+      Name = name,
+      Slug = slug,
+      Description = $"Descripcion de {name}"
+    };
+  }
+
+  private static Product BuildProduct(string publicId, string name, decimal price, int stock, Category? category)
+  {
+    return new Product
+    {
+      Id = Guid.NewGuid(),
+      PublicId = publicId,
+      Name = name,
+      Description = $"Descripcion de {name}",
+      Price = price,
+      ImageUrl = $"https://img/{publicId}.jpg",
+      Stock = stock,
+      IsActive = true,
+      CategoryId = category?.Id ?? Guid.Empty,
+      Category = category
+    };
+  }
+}
