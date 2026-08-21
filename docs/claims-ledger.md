@@ -34,7 +34,7 @@ Fecha de generación: 2026-08-20 · rama `session-02` · commit `cd1ca3b`.
 | No hay autenticación ni autorización en ningún endpoint. | ausencia de `[Authorize]` y de paquetes de auth | alta | confirmada |
 | No hay observabilidad (OpenTelemetry, health checks, Serilog/NLog). | ausencia en todos los `.csproj` | alta | confirmada |
 | El proyecto de pruebas vive en `tests/`, fuera de `src/`, registrado en la solución con ruta relativa. | `src/TheOffice.sln` | alta | confirmada |
-| Solo `ProductService` tiene pruebas (11 casos). | `tests/**/ProductServiceTests.cs` | alta | confirmada |
+| Solo `ProductService` tiene pruebas (11 métodos, 16 casos con los `InlineData`). | `tests/**/ProductServiceTests.cs` | alta | confirmada |
 | La app escucha en `http://localhost:5226`. | `launchSettings.json:17` | alta | confirmada |
 
 ## Inferidas del ecosistema .NET (no leídas de este repo)

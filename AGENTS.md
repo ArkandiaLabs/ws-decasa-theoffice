@@ -66,7 +66,7 @@ En `Development` la app aplica migraciones y siembra datos al arrancar — no ha
 
 xUnit v3 + NSubstitute, con las aserciones nativas de `Assert` (los DTOs de respuesta son `record`, así que `Assert.Equal` compara estructuralmente). Un proyecto de pruebas por proyecto bajo prueba, en `tests/`, con archivos que espejan el layout de `src/`. Los nombres de prueba van en **inglés**, como el resto del código: `Method_Scenario_ExpectedResult`. Las pruebas actuales de `ProductServiceTests` todavía están en español; renómbralas cuando toques el archivo.
 
-Un cambio se considera listo cuando tiene **pruebas unitarias de la capa Application y pruebas de integración** para repositorios y controllers. Hoy solo hay unitarias de `ProductService`; la integración (`WebApplicationFactory`, SQLite in-memory) aún no está montada y `Program.cs` no expone `public partial class Program`, que haría falta. Ver [`docs/dotnet.md`](./docs/dotnet.md) §8 y §13.
+Un cambio se considera listo cuando tiene **pruebas unitarias de la capa Application y pruebas de integración** para repositorios y controllers. Hoy solo hay unitarias de `ProductService`; la integración (`WebApplicationFactory`, SQLite in-memory) aún no está montada y `Program.cs` no expone `public partial class Program`, que haría falta. Ver [`docs/dotnet.md`](./docs/dotnet.md) §7 y §12.
 
 ## Estilo de código
 

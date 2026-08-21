@@ -44,7 +44,7 @@ no usa sus tipos en los controllers.
   (**C# 14** con .NET 10).
 - **SDK fijado / props de build compartidas:** no hay `Directory.Build.props` ni
   `Directory.Build.targets`. `global.json` existe pero **no fija la versión del SDK** — solo
-  selecciona el runner de pruebas (ver §8). Basta con tener instalado un SDK de .NET 10; el build
+  selecciona el runner de pruebas (ver §7). Basta con tener instalado un SDK de .NET 10; el build
   no es estrictamente reproducible entre máquinas.
 - **Idioms de C# 14:** el repo **no** usa `field`, bloques `extension`, `?.=` ni operadores
   definidos por el usuario. Usa properties auto-implementadas y constructores explícitos.
@@ -78,7 +78,7 @@ no usa sus tipos en los controllers.
   comentarios. **No los elimines** por parecer no usados — quitarlos reintroduce el CVE.
   No hay lockfile committeado ni `<NuGetAudit*>` configurado.
 
-## 5. Composition root / DI
+## 4. Composition root / DI
 
 - **Contenedor:** el integrado de `Microsoft.Extensions.DependencyInjection`.
 - **El registro vive en:** `src/Presentation/TheOffice.Api/Program.cs`, que compone tres métodos
@@ -92,7 +92,7 @@ no usa sus tipos en los controllers.
   concreto. Los repositorios y el adaptador sí van contra interfaz. Al agregar una capacidad nueva,
   registra en el `DependencyInjection.cs` de su capa, no en `Program.cs`.
 
-## 6. Acceso a datos (EF Core)
+## 5. Acceso a datos (EF Core)
 
 - **Proveedor:** SQLite (EF Core 10.0.10), vía `UseSqlite(...)` con la cadena
   `ConnectionStrings:DefaultConnection`.
@@ -115,7 +115,7 @@ no usa sus tipos en los controllers.
   Los datos semilla van por `HasData` dentro de `OnModelCreating`, así que **tocar un seeder exige
   generar una migración nueva**. Ver [modelo de datos](./data-model.md).
 
-## 7. Configuración y secretos
+## 6. Configuración y secretos
 
 - **Capas de configuración:** `appsettings.json` → `appsettings.Development.json` → variables de
   entorno (el default del host). No hay `<UserSecretsId>`, ni `.env`, ni Key Vault.
@@ -127,7 +127,7 @@ no usa sus tipos en los controllers.
   `Program.cs` cae en `AllowAnyOrigin()`. Es aceptable para desarrollo, pero **desplegar con el
   arreglo vacío deja la API abierta a cualquier origen**.
 
-## 8. Build, ejecución y pruebas
+## 7. Build, ejecución y pruebas
 
 ```bash
 # desde src/
@@ -155,10 +155,10 @@ dotnet ef database update -p Infrastructure/TheOffice.Persistence -s Presentatio
   el layout del código fuente (`Services/ProductServiceTests.cs`). Los nombres de prueba van en
   inglés, con el patrón `Method_Scenario_ExpectedResult` (los actuales siguen en español). Como los DTOs de respuesta son
   `record`, `Assert.Equal` compara objetos completos de forma estructural.
-- **Cobertura actual:** solo `ProductService` (11 pruebas). `CategoryService` y `CustomerService`
+- **Cobertura actual:** solo `ProductService` (11 métodos, 16 casos). `CategoryService` y `CustomerService`
   no tienen pruebas.
 
-## 9. Puertas de calidad
+## 8. Puertas de calidad
 
 | Puerta | Estado | Notas |
 |---|---|---|
@@ -171,7 +171,7 @@ dotnet ef database update -p Infrastructure/TheOffice.Persistence -s Presentatio
 Recomendado: adoptar un `.editorconfig` que fije la indentación de 2 espacios, y una regla de
 arch-linting que impida que `TheOffice.Domain` referencie cualquier otra capa.
 
-## 10. Superficie de API
+## 9. Superficie de API
 
 - **Forma de la API:** **controllers** (`[ApiController]` + `ControllerBase`), no minimal APIs.
   Tres controllers en `src/Presentation/TheOffice.Api/Controllers/`, uno por agregado. Todas las
@@ -193,9 +193,9 @@ arch-linting que impida que `TheOffice.Domain` referencie cualquier otra capa.
   OpenAPI y Scalar **solo se montan en `Development`**.
 - **Identidad:** **ninguna**. No hay autenticación ni autorización; los endpoints de escritura
   (`POST /products`, `POST /customers`) están abiertos. Es deliberado (punto 4 del roadmap).
-- **CORS:** una sola política, `TheOfficeFrontends`, aplicada globalmente. Ver §7.
+- **CORS:** una sola política, `TheOfficeFrontends`, aplicada globalmente. Ver §6.
 
-## 11. Despliegue y empaquetado
+## 10. Despliegue y empaquetado
 
 - **Forma del empaquetado:** **ninguna definida todavía.** No hay `Dockerfile`, ni `compose*.yml`,
   ni propiedades `<EnableSdkContainerSupport>` / `<ContainerRepository>`, ni IaC. Hoy la app solo
@@ -209,7 +209,20 @@ arch-linting que impida que `TheOffice.Domain` referencie cualquier otra capa.
 
 Ver [infraestructura](./infrastructure.md) para el destino de despliegue y la ruta a producción.
 
-## 13. Trampas / puntos calientes
+## 11. Preocupaciones transversales
+
+Prácticamente ausentes, y conviene no asumir lo contrario:
+
+- **Observabilidad:** solo el logging por defecto de `Microsoft.Extensions.Logging`, configurado en
+  `appsettings.json`. Sin OpenTelemetry, sin health checks, sin Serilog/NLog.
+- **Resiliencia:** nada. Sin Polly ni `Microsoft.Extensions.Http.Resilience`. Tampoco hay
+  `HttpClient` saliente que las necesite.
+- **Manejo de errores:** no hay middleware de excepciones ni `ProblemDetails`. Los errores de
+  negocio viajan por `Result`; una excepción no capturada sale como el 500 por defecto de Kestrel.
+- **IA:** nada. Sin `Microsoft.Extensions.AI`, Semantic Kernel ni MCP.
+- **Aspire:** no se usa. La aplicación se ejecuta con `dotnet run --project`.
+
+## 12. Trampas / puntos calientes
 
 - **Ningún método async propaga `CancellationToken`** — cero ocurrencias en todo `src/`. Sigue el
   patrón existente; no empieces a hilarlo en un solo método.
@@ -238,8 +251,6 @@ Ver [infraestructura](./infrastructure.md) para el destino de despliegue y la ru
   que cablea algo.
 - **`ConsoleNotificationAdapter` es un stub**: hace `Console.WriteLine` dentro de un `Task.Run`.
   No hay notificaciones reales.
-- **Sin observabilidad**: ni OpenTelemetry, ni health checks, ni Serilog/NLog. Solo el logging por
-  defecto de `Microsoft.Extensions.Logging` configurado en `appsettings.json`.
 
 ## Docs relacionados
 
