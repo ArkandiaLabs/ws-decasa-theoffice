@@ -153,7 +153,7 @@ dotnet ef database update -p Infrastructure/TheOffice.Persistence -s Presentatio
   ni Testcontainers.
 - **Organización de las pruebas:** un proyecto por proyecto bajo prueba, con archivos que espejan
   el layout del código fuente (`Services/ProductServiceTests.cs`). Los nombres de prueba van en
-  español con el patrón `Metodo_Escenario_ResultadoEsperado`. Como los DTOs de respuesta son
+  inglés, con el patrón `Method_Scenario_ExpectedResult` (los actuales siguen en español). Como los DTOs de respuesta son
   `record`, `Assert.Equal` compara objetos completos de forma estructural.
 - **Cobertura actual:** solo `ProductService` (11 pruebas). `CategoryService` y `CustomerService`
   no tienen pruebas.
