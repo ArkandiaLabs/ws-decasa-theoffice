@@ -64,16 +64,38 @@ Lo disponible hoy en `src/`: una API REST versionada sobre .NET 10, con arquitec
 
 ## 🏁 Comenzando
 
-1. Navega a la carpeta `src`.
-2. Restaura las dependencias:
+### Requisitos
+
+Además del SDK de .NET 10, el repo usa tres herramientas para sus comprobaciones automáticas.
+`make` **no viene con Windows**: hay que instalarlo.
+
+| Herramienta | macOS | Windows | Linux |
+|---|---|---|---|
+| SDK de .NET 10 | [descarga](https://dotnet.microsoft.com/download) | [descarga](https://dotnet.microsoft.com/download) | [descarga](https://dotnet.microsoft.com/download) |
+| `make` | viene con las Xcode Command Line Tools | `winget install ezwinports.make` | viene con la distribución |
+| Lefthook | `brew install lefthook` | `winget install evilmartians.lefthook` | `go install github.com/evilmartians/lefthook@latest` |
+| gitleaks | `brew install gitleaks` | `winget install gitleaks` | `apt install gitleaks` en Debian trixie+ / Ubuntu 25.04+; en LTS más viejas, el binario de [releases](https://github.com/gitleaks/gitleaks/releases) |
+
+### Puesta en marcha
+
+Desde la raíz del repositorio:
+
+1. Instala los git hooks (una sola vez):
    ```bash
-   dotnet restore
+   make hooks
    ```
-3. Ejecuta el backend:
+2. Ejecuta el backend:
    ```bash
-   dotnet run --project Presentation/TheOffice.Api
+   make run
    ```
-4. La API queda en `http://localhost:5226` y la documentación interactiva en `http://localhost:5226/scalar`.
+3. La API queda en `http://localhost:5226` y la documentación interactiva en `http://localhost:5226/scalar`.
+4. Comprueba que todo está en orden:
+   ```bash
+   make check
+   ```
+
+`make check` corre estilo, compilación y pruebas — es la misma comprobación que ejecuta la
+integración continua. `make help` lista el resto de objetivos.
 
 No hace falta preparar la base de datos: en `Development` la aplicación aplica las migraciones al arrancar y siembra el catálogo. El archivo `theoffice.db` se crea local y está ignorado por Git.
 

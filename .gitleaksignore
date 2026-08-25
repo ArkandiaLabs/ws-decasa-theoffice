@@ -1,0 +1,10 @@
+# Fingerprints of findings gitleaks reports that are NOT secrets.
+#
+# One fingerprint per line, in the form printed by gitleaks when it blocks:
+#   <commit>:<file>:<rule-id>:<line>
+# For a finding in the working tree (gitleaks protect) the commit part is empty.
+#
+# Every entry needs a comment saying why it is not a secret and who decided that.
+# An unexplained fingerprint is an unreviewed leak.
+#
+# This repo's history scanned clean when the gate was installed, so the file starts empty.

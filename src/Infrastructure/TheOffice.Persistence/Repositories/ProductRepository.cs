@@ -1,9 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 
-using TheOffice.Domain.Common;
-using DomainEntities = TheOffice.Domain.Entities;
 using TheOffice.Application.Interfaces.Persistence;
+using TheOffice.Domain.Common;
 using TheOffice.Persistence.Mappers;
+
+using DomainEntities = TheOffice.Domain.Entities;
 
 namespace TheOffice.Persistence.Repositories;
 

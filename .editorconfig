@@ -1,0 +1,59 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+[Makefile]
+indent_style = tab
+
+# EVERY C# rule belongs in this section. .editorconfig has no scoping beyond the last section
+# header seen, so a rule written after the generated-code sections below silently applies only to
+# generated files - which are excluded, making the rule inert with no error anywhere. Keep the
+# narrow sections at the bottom of this file.
+[*.{cs,csx}]
+# Measured, not assumed: 2 spaces is what the existing .cs files use.
+indent_size = 2
+
+# --- File organisation ---
+csharp_style_namespace_declarations = file_scoped:suggestion
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = true
+dotnet_diagnostic.IDE0005.severity = warning   # unnecessary usings
+
+# --- Formatting ---
+csharp_new_line_before_open_brace = all
+csharp_prefer_braces = true:suggestion
+dotnet_diagnostic.IDE0055.severity = error     # formatting: what `dotnet format` gates on
+
+# --- var vs explicit type ---
+csharp_style_var_for_built_in_types = false:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_var_elsewhere = false:suggestion
+
+# --- Naming ---
+dotnet_naming_rule.private_fields_underscore.severity = suggestion
+dotnet_naming_rule.private_fields_underscore.symbols = private_fields
+dotnet_naming_rule.private_fields_underscore.style = underscore_prefix
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private
+dotnet_naming_style.underscore_prefix.required_prefix = _
+dotnet_naming_style.underscore_prefix.capitalization = camel_case
+
+# --- Exceptions: every one needs a reason and an owner ---
+# ConfigureAwait: not applicable in ASP.NET Core, which has no synchronization context.
+# Owner: equipo TheOffice.
+dotnet_diagnostic.CA2007.severity = none
+
+# --- Generated code: keep these sections LAST, see the note above ---
+# EF Core migrations and *.Designer.cs are rewritten by tools that do not read this file, so every
+# regeneration would reopen the same fight with `dotnet format`.
+[*.{g,i,designer,Designer,generated}.cs]
+generated_code = true
+
+[**/Migrations/*.cs]
+generated_code = true

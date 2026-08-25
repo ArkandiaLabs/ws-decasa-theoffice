@@ -1,8 +1,9 @@
 using Asp.Versioning;
+
 using Microsoft.AspNetCore.Mvc;
 
-using TheOffice.Application.Services;
 using TheOffice.Application.DTOs;
+using TheOffice.Application.Services;
 
 namespace TheOffice.Api.Controllers;
 
