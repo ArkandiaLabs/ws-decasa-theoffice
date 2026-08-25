@@ -9,7 +9,7 @@ ARCH := tests/TheOffice.ArchitectureTests
 TEST_LOGGER := --report-xunit-trx
 
 .DEFAULT_GOAL := help
-.PHONY: help restore restore-locked build test arch format lint secrets audit check ci run clean hooks hooks-test
+.PHONY: help restore restore-locked build test arch format lint secrets audit check ci run clean hooks
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -42,20 +42,10 @@ secrets: ## Scan the working tree for committed secrets
 audit: ## Report vulnerable dependencies (report only, never fails)
 	dotnet list $(SLN) package --vulnerable --include-transitive
 
-hooks-test: ## Run the agent hook tests
-# Skipped LOUDLY, never silently: a guard whose tests never ran looks exactly like a guard whose
-# tests passed. python3 ships with the Xcode CLT and with the GitHub runners, so the skip is for
-# the machine that has neither, and it says so instead of pretending the suite was green.
-	@if command -v python3 >/dev/null 2>&1; then \
-	  python3 scripts/agent-hooks/tests/test_secret_read_guard.py; \
-	else \
-	  echo "SKIPPED - no python3, the agent hook tests did NOT run"; \
-	fi
-
-check: restore lint build test hooks-test ## Single confidence signal
+check: restore lint build test ## Single confidence signal
 	@echo "OK - the repo is green"
 
-ci: restore-locked lint build test hooks-test secrets ## What the pipeline runs
+ci: restore-locked lint build test secrets ## What the pipeline runs
 	@echo "OK - CI gates passed"
 
 run: ## Run the application

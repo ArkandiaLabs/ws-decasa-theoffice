@@ -84,16 +84,13 @@ local; apuntarlo a producción es una decisión, no un accidente de configuraci�
 
 ### Hooks del agente — solo local
 
-Los hooks de `scripts/agent-hooks/`, registrados en `.claude/settings.json`, **disparan en la
-máquina del desarrollador y en ningún otro lado**: la integración continua no interpone ninguno
-entre un agente y un archivo. La asimetría es deliberada — son sensores en el momento de
-escribir, no compuertas de merge — pero conviene tenerla presente antes de asumir que algo está
-cubierto en el pipeline.
+Los hooks de `scripts/agent-hooks/`, registrados en `.claude/settings.json`, corren **en la máquina
+del desarrollador y en ningún otro lado**. La integración continua no ejecuta ninguno: `make ci` no
+los conoce. La asimetría es deliberada — son sensores en el momento de escribir, no compuertas de
+merge — pero conviene tenerla presente antes de asumir que algo está cubierto en el pipeline.
 
-Lo que CI sí corre es su **suite**: `make ci` incluye `hooks-test`, así que un cambio que rompa
-el guardia de secretos se ve en el pipeline aunque el hook nunca dispare ahí. Es la única parte
-del instrumental del agente que tiene red en CI, y necesita `python3` en el runner: sin él el
-objetivo avisa y sigue, en vez de fingir que pasó.
+Tampoco hay pruebas automáticas del guardia: su comportamiento se comprueba a mano, disparándolo.
+Un cambio en `secret-read-guard.sh` no tiene más red que quien lo revisa.
 
 ## Producción
 

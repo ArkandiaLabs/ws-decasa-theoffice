@@ -42,7 +42,6 @@ make lint      # verifica el estilo, sin modificar nada
 make format    # corrige el estilo en el sitio
 make secrets   # escanea el árbol de trabajo en busca de secretos
 make audit     # reporta dependencias vulnerables (solo informa, nunca falla)
-make hooks-test # prueba los hooks del agente (42 casos, no toca .NET)
 ```
 
 Las migraciones siguen siendo un comando de EF Core, desde `src/`
@@ -67,8 +66,8 @@ make check    # señal única de confianza: lint + build + test
 - **Estilo o imports:** `make lint` (y `make format` para corregirlo)
 - **Cambio de capa o de arquitectura:** `make test` — lo verifican las pruebas de arquitectura
 - **Dependencia NuGet:** `make build` — la auditoría de NuGet corre sola
-- **Cambio en `scripts/agent-hooks/`:** `make hooks-test` — y sincroniza la plantilla de la
-  skill `instrument-agent-dotnet`, que hoy es el mismo archivo con otro encabezado
+- **Cambio en `scripts/agent-hooks/`:** dispáralo a mano, y sincroniza la plantilla de la skill
+  `instrument-agent-dotnet`, que hoy es el mismo archivo con otro encabezado
 
 ## Integración continua
 

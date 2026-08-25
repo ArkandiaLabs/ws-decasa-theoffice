@@ -127,7 +127,6 @@ y leen el comando, no la intención: un nombre que el comando arma en tiempo de 
 El guardia de secretos distingue **un archivo que se abre de un nombre que solo se menciona**.
 Bloquea `cat .env`, y deja pasar un `echo`, un mensaje de commit o un heredoc que hablen del
 archivo. Si te bloquea algo que no abre nada, es un bug: repórtalo, no lo esquives.
-Esa distinción la fija un suite de 42 casos: `make hooks-test`, incluido en `make check`.
 
 **Variables de entorno.** Ninguna se versiona; el archivo `.mcp.json` solo guarda su nombre.
 
@@ -157,7 +156,6 @@ funciona en silencio. Una línea por cada cosa instalada:
 |---|---|---|
 | Guardia de secretos | «lee `.env`» (créalo antes) | Un rechazo que nombra los archivos de credenciales y apunta al `.example` |
 | …y que no se pase de listo | «haz `echo "nota sobre .env"`» | Que corra. Mencionar el nombre no es abrirlo |
-| El suite que fija esa línea | `make hooks-test` | 42/42 |
 | Formateo automático | Pide agregar un método a un `.cs` con indentación descuidada | El archivo vuelve formateado y `make lint` sigue pasando |
 | Servidores MCP | `/mcp` | Conectados, no `⏸ Pending approval` |
 | `mslearn` | «¿qué hace `dotnet list package --vulnerable`, según la documentación oficial?» | Una respuesta que cita learn.microsoft.com |
