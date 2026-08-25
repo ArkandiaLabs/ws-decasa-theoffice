@@ -405,3 +405,11 @@ src/.DS_Store
 *.db
 *.db-shm
 *.db-wal
+
+# Credenciales locales — nunca se versionan.
+# El valor va en la máquina; el repo solo guarda el ejemplo.
+.env
+.env.*
+!.env.example
+appsettings.Secrets.json
+appsettings.*.Secrets.json

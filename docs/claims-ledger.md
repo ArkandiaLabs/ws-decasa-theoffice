@@ -52,7 +52,7 @@ Actualizado: 2026-08-25 · rama `session-03` · tras instalar la instrumentació
 | El formateo automático deja el `.cs` recién escrito pasando la misma compuerta que `make lint`. | verificado escribiendo un `.cs` con `using` sin ordenar e indentación errónea; `dotnet format --verify-no-changes` sobre él salió 0 | alta | confirmada |
 | `dotnet format --include <ruta relativa a la raíz>` sí acota al archivo, ejecutado desde la raíz del repo. | verificado con el mismo archivo de prueba | alta | confirmada |
 | Formatear un solo archivo cuesta ~3,3 s; `make audit` cuesta ~7,2 s y hoy no reporta paquetes vulnerables. | medidos en esta máquina | media | confirmada (una sola máquina) |
-| `.gitignore` **no** tiene entrada para `.env`. | `grep -in env .gitignore` → 0 resultados | alta | confirmada |
+| `.gitignore` ignora los archivos de credenciales (`.env`, `.env.*`, `appsettings.Secrets.json`), con `!.env.example` como excepción. | `.gitignore`, sección «Credenciales locales» | alta | confirmada |
 | `.mcp.json` registra `mslearn` (HTTP) y `dbhub` (stdio, `@bytebase/dbhub@1.2.1`), sin credenciales literales. | `.mcp.json` | alta | confirmada |
 | `@bytebase/dbhub@1.2.1` acepta `--transport stdio` y `--dsn`, y conecta contra el SQLite local. | ejecutado con el DSN real; salida `Tool registry initialized`, exit 0 | alta | confirmada |
 
