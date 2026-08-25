@@ -1,0 +1,56 @@
+<!--
+Placeholders:
+  {{PROJECT_NAME}}
+  {{DETECTED_DEPLOYMENT}}    — e.g. "Docker Compose on single VM", "AWS ECS Fargate", "Kubernetes"
+  {{DETECTED_CI}}            — e.g. "GitHub Actions", "Jenkins", "Azure Pipelines"
+-->
+
+# Infrastructure — {{PROJECT_NAME}}
+
+## Local development
+
+### Prerequisites
+
+<!-- TODO: list the tools a new developer must install (language runtime, DB, Docker, etc.). -->
+
+### Quickstart
+
+```bash
+# TODO: the 3-5 commands that get the app running from a fresh clone.
+```
+
+### Services (local)
+
+| Service | URL | Purpose |
+|---|---|---|
+| | | |
+
+### Environment variables
+
+- `.env.example` is the canonical list. Copy to `.env` and fill in.
+- Never commit `.env`.
+
+## Production
+
+### Deployment target
+
+{{DETECTED_DEPLOYMENT}}
+
+### Topology
+
+<!-- TODO: short description + diagram (Mermaid) of prod topology. What's behind the load balancer, what talks to what. -->
+
+### CI/CD
+
+- **Tool:** {{DETECTED_CI}}
+- **Trigger:** <!-- push to main / tag / manual -->
+- **Steps:** <!-- build → test → deploy summary, referencing the pipeline file -->
+
+## Observability
+
+<!-- TODO: logs, metrics, traces. If nothing is in place, note "TODO — not yet configured" so agents know not to assume. -->
+
+## Related docs
+
+- [Architecture](./architecture.md)
+- [Decisions](./adrs/)

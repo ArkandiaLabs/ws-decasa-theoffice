@@ -1,0 +1,70 @@
+# Written to the repo root as `.editorconfig`.
+#
+# Placeholders:
+#   {{CS_INDENT_SIZE}}  — the indentation the .cs files ALREADY use. Measure it; do not assume 4.
+#                         A repo on 2 spaces that gets a 4-space rule reformats every file in it,
+#                         and Phase 5 then "verifies" a gate that rewrites the codebase backwards.
+#
+# SEVERITY: under TreatWarningsAsErrors, a rule at `warning` becomes a build error — in either
+# spelling, the `:warning` suffix or `dotnet_diagnostic.<ID>.severity = warning`. That is the point
+# for the two rules deliberately set below; it is a trap for everything else. On a repo with
+# existing debt, start the rest at `suggestion` and raise them once `make check` is green.
+#
+# Comments may sit at the end of a value line: Roslyn strips them. Keep the reason next to the rule.
+#
+# Adjust the var / brace / naming conventions to the team's actual style — the point is to end
+# the debate, not to win it. Delete this header before writing the file.
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+[Makefile]
+indent_style = tab
+
+[*.{cs,csx}]
+indent_size = {{CS_INDENT_SIZE}}
+
+# --- Generated code ---
+# EF Core migrations, *.g.cs, *.Designer.cs and scaffolded clients are rewritten by tools that do
+# not read this file, so every regeneration reopens the same fight with `dotnet format`. Exclude
+# them. Add the paths this repo actually has; delete the sections that do not apply.
+[*.{g,i,designer,Designer,generated}.cs]
+generated_code = true
+
+[**/Migrations/*.cs]
+generated_code = true
+
+# --- File organisation ---
+csharp_style_namespace_declarations = file_scoped:suggestion
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = true
+dotnet_diagnostic.IDE0005.severity = warning   # unnecessary usings
+
+# --- Formatting ---
+csharp_new_line_before_open_brace = all
+csharp_prefer_braces = true:suggestion
+dotnet_diagnostic.IDE0055.severity = error     # formatting: what `dotnet format` gates on
+
+# --- var vs explicit type ---
+csharp_style_var_for_built_in_types = false:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_var_elsewhere = false:suggestion
+
+# --- Naming ---
+dotnet_naming_rule.private_fields_underscore.severity = suggestion
+dotnet_naming_rule.private_fields_underscore.symbols = private_fields
+dotnet_naming_rule.private_fields_underscore.style = underscore_prefix
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private
+dotnet_naming_style.underscore_prefix.required_prefix = _
+dotnet_naming_style.underscore_prefix.capitalization = camel_case
+
+# --- Exceptions: every one needs a reason ---
+dotnet_diagnostic.CA2007.severity = none       # ConfigureAwait: not applicable in ASP.NET Core

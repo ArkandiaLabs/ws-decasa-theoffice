@@ -61,6 +61,34 @@ Cors__AllowedOrigins__0="https://tienda.ejemplo.com"
 `AllowAnyOrigin()`. Es cómodo en local, pero desplegar así deja la API abierta a cualquier origen:
 al desplegar, poblá el arreglo.
 
+### Servidores MCP
+
+`.mcp.json`, en la raíz, está versionado a propósito: el alcance de proyecto es lo que hace que un
+servidor llegue al equipo entero en vez de vivir en el `~/.claude.json` de una persona. Ninguna
+credencial se escribe ahí — solo referencias `${VAR}`.
+
+| Servidor | Transporte | Autenticación | Alcanza |
+|---|---|---|---|
+| `mslearn` | HTTP (`https://learn.microsoft.com/api/mcp`) | ninguna | Documentación oficial de .NET, EF Core y Azure |
+| `dbhub` | stdio, `npx -y @bytebase/dbhub@1.2.1` | `${APP_DSN}` | Esquema y datos de la base que apunte el DSN |
+
+**La versión de `dbhub` está fijada a propósito.** `.mcp.json` se lee al iniciar cada sesión, así
+que una entrada sin fijar ejecutaría lo que npm haya publicado desde entonces, con los permisos
+del usuario y sin que nada en el historial diga que el código cambió. Fijarla convierte la subida
+en una línea revisable del diff. Al subirla, **vuelve a comprobar los flags** contra la versión
+nueva: `npx -y @bytebase/dbhub@<versión> --help < /dev/null` (la redirección de stdin es
+obligatoria; sin ella el servidor se queda esperando un handshake que nunca llega).
+
+**Un agente con conexión a la base lee lo que el DSN apunte.** Hoy `APP_DSN` apunta al SQLite
+local; apuntarlo a producción es una decisión, no un accidente de configuración.
+
+### Hooks del agente — solo local
+
+Los hooks de `scripts/agent-hooks/`, registrados en `.claude/settings.json`, corren **en la máquina
+del desarrollador y en ningún otro lado**. La integración continua no ejecuta ninguno: `make ci` no
+los conoce. La asimetría es deliberada — son sensores en el momento de escribir, no compuertas de
+merge — pero conviene tenerla presente antes de asumir que algo está cubierto en el pipeline.
+
 ## Producción
 
 ### Objetivo de despliegue

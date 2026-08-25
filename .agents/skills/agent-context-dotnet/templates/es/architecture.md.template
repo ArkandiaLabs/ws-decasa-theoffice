@@ -1,0 +1,72 @@
+<!--
+Placeholders:
+  {{PROJECT_NAME}}
+  {{STACK_SUMMARY}}         — ej. "ASP.NET Core 10 + SQL Server + EF Core 10, desplegado en Azure Container Apps"
+  {{DETECTED_LANGUAGES}}    — lenguajes primarios detectados en Fase 1 (C#, F#, más el lenguaje del frontend si aplica)
+  {{DETECTED_FRAMEWORK}}    — framework principal (ASP.NET Core, Blazor, MAUI, Worker Service...)
+  {{DETECTED_PERSISTENCE}}  — BD + proveedor + herramienta de migraciones (SQL Server + EF Core, PostgreSQL + Npgsql + EF Core...)
+  {{DETECTED_DEPLOYMENT}}   — Azure App Service, Container Apps / AKS, IIS en VM, imagen de contenedor, etc.
+-->
+
+# Arquitectura
+
+## Resumen
+
+{{STACK_SUMMARY}}
+
+## Atributos de calidad
+
+| Atributo | Prioridad | Justificación |
+|---|---|---|
+| <!-- ej. Simplicidad --> | <!-- Alta/Media/Baja --> | <!-- Por qué importa aquí --> |
+| Desplegabilidad | | |
+| Modificabilidad | | |
+| Confiabilidad | | |
+| Rendimiento | | |
+| Seguridad | | |
+
+Borra filas que no apliquen. Deja solo las que generan trade-offs reales.
+
+## Stack técnico
+
+- **Lenguajes:** {{DETECTED_LANGUAGES}}
+- **Framework(s):** {{DETECTED_FRAMEWORK}}
+- **Persistencia:** {{DETECTED_PERSISTENCE}}
+- **Despliegue:** {{DETECTED_DEPLOYMENT}}
+- **CI/CD:** <!-- TODO: confirmar la herramienta de CI detectada en .github/workflows, Jenkinsfile, etc. -->
+
+## Patrón
+
+<!-- TODO: describir el patrón de alto nivel (capas / hexagonal / microservicios / monolito modular) en 1-2 párrafos. Incluye un árbol de carpetas para que los agentes sepan dónde vive el código. -->
+
+```
+<raíz-del-proyecto>/
+├── <carpeta de código principal>/
+├── <carpeta de tests>/
+└── <config>
+```
+
+## Diagrama de componentes
+
+<!-- TODO: dibuja un C4 simple (contexto + contenedores). Mermaid sugerido:
+
+```mermaid
+flowchart LR
+  user[Usuario] -->|HTTPS| app[{{PROJECT_NAME}}]
+  app -->|SQL| db[(Base de datos)]
+```
+
+-->
+
+## Reglas clave (reforzadas por la arquitectura, no por el linter)
+
+<!-- TODO: lista los invariantes arquitectónicos. Ejemplo:
+- El dominio no puede importar infraestructura. Justificación: ADR-001.
+- Toda ruta de escritura debe validar el scope de tenant. Justificación: ADR-002.
+-->
+
+## Docs relacionados
+
+- [Decisiones](./adrs/) — por qué la arquitectura se ve así.
+- [Modelo de datos](./data-model.md) — esquema + relaciones.
+- [Infraestructura](./infrastructure.md) — topología de despliegue.

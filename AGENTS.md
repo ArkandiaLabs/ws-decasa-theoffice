@@ -78,6 +78,29 @@ restauración en modo bloqueado y el escaneo de secretos.
 El pipeline es un reporte hasta que se exija como status check obligatorio en la protección de
 rama. Ver [infraestructura](./docs/infrastructure.md).
 
+## Hooks del agente
+
+`.claude/settings.json` registra dos hooks, implementados en `scripts/agent-hooks/`. Corren
+**solo bajo Claude Code**: los scripts son shell portable, pero el registro no lo lee ningún otro
+agente. No son una frontera de seguridad — corren con tu shell y tus permisos, y comparan texto.
+
+- **`secret-read-guard.sh`** — `PreToolUse`. **Bloquea** leer archivos de credenciales: `.env`,
+  llaves privadas (`*.pem`, `*.pfx`, `id_rsa`), `secrets.json`, `.ssh/`, `.aws/credentials`. Si te
+  lo rechaza, usa el archivo `.example` versionado o pide el valor al usuario — no es un bug.
+- **`format-on-edit.sh`** — `PostToolUse`. Corre `dotnet format` sobre el `.cs` recién escrito, y
+  solo sobre ese archivo. **No gastes turnos en indentación ni en el orden de los `using`.** Nunca
+  bloquea.
+
+## MCP
+
+`.mcp.json` registra dos servidores, para que el agente consulte los sistemas en vez de recibirlos
+pegados en el chat:
+
+- **`mslearn`** — documentación oficial de .NET, EF Core y Azure. HTTP, sin credenciales.
+- **`dbhub`** — lectura del esquema y los datos reales de la base SQLite. Necesita la variable de
+  entorno `APP_DSN`; su valor nunca se versiona. Ver el [`README.md`](./README.md) para exportarla
+  y para activar los servidores.
+
 ## Reglas no obvias
 
 **Arquitectura y contratos**

@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "skills": {
+    "ado-plan-build": {
+      "source": "ArkandiaLabs/arkandia-skills",
+      "sourceType": "github",
+      "skillPath": "arkandia/skills/ado-plan-build/SKILL.md",
+      "computedHash": "d2794f4132d43ecefb49b182892df8a5efd85403159b8d4baff10a84a239985f"
+    },
+    "agent-context-dotnet": {
+      "source": "ArkandiaLabs/arkandia-skills",
+      "sourceType": "github",
+      "skillPath": "arkandia/skills/agent-context-dotnet/SKILL.md",
+      "computedHash": "d91252a6e012580f23e59075d3c6b6e6e103de251a134e9b0a8000a1b7889bb9"
+    },
+    "instrument-agent-dotnet": {
+      "source": "ArkandiaLabs/arkandia-skills",
+      "sourceType": "github",
+      "skillPath": "arkandia/skills/instrument-agent-dotnet/SKILL.md",
+      "computedHash": "aec86ba801cc313372c0dd3d54843d008e775c44be0bb7dee430f48c48fafa0d"
+    },
+    "instrument-project-dotnet": {
+      "source": "ArkandiaLabs/arkandia-skills",
+      "sourceType": "github",
+      "skillPath": "arkandia/skills/instrument-project-dotnet/SKILL.md",
+      "computedHash": "1f485f7c6309a9cfbc4d6bf324d8eac553fc28e523c3038d4dfb6d83c327197a"
+    },
+    "linear-plan-build": {
+      "source": "ArkandiaLabs/arkandia-skills",
+      "sourceType": "github",
+      "skillPath": "arkandia/skills/linear-plan-build/SKILL.md",
+      "computedHash": "4537b8957e61df73141f324f48d10f7c1f12cefc274fa45250727bc7c305abfa"
+    }
+  }
+}

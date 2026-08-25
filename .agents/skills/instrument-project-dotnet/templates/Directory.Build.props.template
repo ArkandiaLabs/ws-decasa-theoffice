@@ -1,0 +1,110 @@
+<!--
+Placeholders:
+  {{TARGET_FRAMEWORK}}  — the TFM the projects already use (e.g. net10.0). ONLY when the user
+                          explicitly opted into centralising it; otherwise delete that line.
+
+Repo root. MSBuild applies this to every project below it — no .csproj edits needed.
+
+CHECK FOR A NESTED COPY FIRST.
+MSBuild walks up from each project and stops at the first Directory.Build.props it finds. One at
+src/Directory.Build.props makes a root-level file dead for everything under src/ — in a repo laid
+out as src/<Layer>/<Project>, that is every project, and nothing reports an error. If a nested file
+exists, either merge into it instead of writing here, or add this line to it so the root file is
+chained:
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove($(MSBuildThisFileName)$(MSBuildThisFileExtension), $(MSBuildThisFileDirectory)..))" />
+
+Either way, confirm the properties are actually in force:
+
+  dotnet msbuild <any-project> -getProperty:TreatWarningsAsErrors
+
+TARGET FRAMEWORK — DELETE THE LINE UNLESS THE USER OPTED IN.
+This file is imported before the body of each .csproj, so a project that declares its own
+TargetFramework overrides whatever is set here. Since virtually every project created from a
+template declares one, the property below is inert: it reads as "the TFM is centralised" while each
+project still decides for itself.
+
+Centralising it for real means deleting TargetFramework from every .csproj — the same class of
+migration as central package management, and offered the same way. Off by default. Always delete
+the line when any project multi-targets (TargetFrameworks) or when projects disagree.
+
+NEVER PUT TWO CONSECUTIVE HYPHENS IN A COMMENT.
+XML forbids the sequence inside a comment, so MSBuild cannot load the file. It is easy to hit here,
+because the skill asks you to justify every exception and command-line flags are the natural way to
+name one. Write the flag as prose instead: "locked mode", not the flag spelling; "the no-restore
+build", not the flag spelling.
+
+The failure gives you nothing to work with. `dotnet restore` reports
+
+  MSB4181: The "RestoreTask" task returned false but did not log an error
+
+with no file and no line. If a build starts failing right after this file is edited, validate it
+before investigating anything else:
+
+  dotnet msbuild <any-project> -getProperty:TargetFramework
+
+That surfaces the real XML error, naming the file and the line.
+
+ADOPTION NOTE — repositories with history.
+Turning TreatWarningsAsErrors on cold surfaces years of accumulated warnings. Ship it with an
+explicit NoWarn list and drain the list over time; the file then IS the debt register. Every entry
+needs a reason and an owner:
+
+  <PropertyGroup>
+    <NoWarn>$(NoWarn);CA1062;IDE0290</NoWarn>
+  </PropertyGroup>
+
+Delete this header before writing the file.
+-->
+<Project>
+
+  <PropertyGroup>
+    <!-- Only when the team opted into centralising the target framework. -->
+    <TargetFramework>{{TARGET_FRAMEWORK}}</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- A warning stops being an opinion. -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <!-- .editorconfig rules run inside the build, not only in whoever's IDE has them on. -->
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <!-- Required for IDE0005 (unnecessary using directives) to be reported on a command-line
+         build. Without it Roslyn skips the rule and warns that this property is missing, so the
+         style gate quietly loses one of its most useful rules. dotnet/roslyn issue 41640. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!--
+      A vulnerable dependency breaks the build.
+
+      This is the one setting here that can turn a green commit red with nobody touching the
+      repository: a newly published advisory against a dependency you already have fails the next
+      build. That is intended — a known vulnerability should stop the line — but it is a decision
+      the team accepts, not a default. To soften it, raise NuGetAuditLevel to moderate or set
+      NuGetAuditMode to direct, and record the reason right here.
+    -->
+    <NuGetAudit>true</NuGetAudit>
+    <NuGetAuditLevel>low</NuGetAuditLevel>
+    <NuGetAuditMode>all</NuGetAuditMode>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Freeze the resolved dependency tree, transitives included. The generated
+         packages.lock.json files belong in version control: CI restores in locked mode and fails
+         when they drift from the projects. Drop this line if the team opted out of lock files. -->
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Same inputs, same binary. -->
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(TF_BUILD)' == 'true' or '$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+</Project>

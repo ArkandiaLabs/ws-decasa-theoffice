@@ -75,6 +75,13 @@ Además del SDK de .NET 10, el repo usa tres herramientas para sus comprobacione
 | `make` | viene con las Xcode Command Line Tools | `winget install ezwinports.make` | viene con la distribución |
 | Lefthook | `brew install lefthook` | `winget install evilmartians.lefthook` | `go install github.com/evilmartians/lefthook@latest` |
 | gitleaks | `brew install gitleaks` | `winget install gitleaks` | `apt install gitleaks` en Debian trixie+ / Ubuntu 25.04+; en LTS más viejas, el binario de [releases](https://github.com/gitleaks/gitleaks/releases) |
+| Git Bash | viene con el sistema | **viene con [Git para Windows](https://gitforwindows.org/)** | viene con la distribución |
+| Node / `npx` | `brew install node` | `winget install OpenJS.NodeJS` | el paquete de la distribución |
+
+Las dos últimas filas son para el instrumental del agente de IA, no para compilar el proyecto.
+**Git Bash importa en Windows**: los scripts de `scripts/agent-hooks/` son bash, y si Git Bash no
+está, Claude Code cae a PowerShell y los hooks **dejan de hacer nada, en silencio**. Node solo
+hace falta para el servidor MCP de base de datos, que se lanza con `npx`.
 
 ### Puesta en marcha
 
@@ -105,6 +112,48 @@ Para trabajar las migraciones a mano:
 dotnet ef migrations add <Nombre> -p Infrastructure/TheOffice.Persistence -s Presentation/TheOffice.Api
 dotnet ef database update -p Infrastructure/TheOffice.Persistence -s Presentation/TheOffice.Api
 ```
+
+### Instrumental del agente de IA
+
+El repositorio trae dos hooks y dos servidores MCP. Qué hace cada uno está en
+[`AGENTS.md`](./AGENTS.md); aquí está cómo ponerlos a funcionar.
+
+**Los hooks son de Claude Code.** Los scripts de `scripts/agent-hooks/` son shell portable, pero
+el registro vive en `.claude/settings.json` y hoy no lo lee ningún otro agente: en Codex, Cursor o
+Copilot **no corren**. Tampoco son una frontera de seguridad — corren con tu shell y tus permisos,
+y comparan texto, no intención.
+
+**Variables de entorno.** Ninguna se versiona; el archivo `.mcp.json` solo guarda su nombre.
+
+| Variable | Qué es | De dónde sale |
+|---|---|---|
+| `APP_DSN` | Cadena de conexión que lee el servidor MCP de base de datos | La ruta **absoluta** al SQLite local. SQLite rechaza una ruta relativa, y una ruta absoluta es específica de tu máquina — por eso no puede ir en el archivo compartido |
+
+```bash
+export APP_DSN="sqlite://$(pwd)/src/Presentation/TheOffice.Api/theoffice.db"
+```
+
+**Activar los servidores MCP.** Escribir `.mcp.json` no los conecta: quedan en
+`⏸ Pending approval` hasta que confíes en el espacio de trabajo, y un repositorio recién clonado
+**no puede aprobar sus propios servidores**. Ejecuta `claude` en la raíz del repo, acepta el
+diálogo de confianza, y comprueba con `/mcp`.
+
+Si tu editor subraya `${APP_DSN}` en `.mcp.json` con `Variable APP_DSN not found`, es un falso
+positivo: VS Code lo lee como una variable suya. El archivo está bien y el aviso desaparece cuando
+exportas la variable.
+
+### Pruébalo
+
+Nada de esto se ve hasta que hace algo, y un hook que nunca dispara se parece demasiado a uno que
+funciona en silencio. Una línea por cada cosa instalada:
+
+| Instalado | Pide al agente / ejecuta | Deberías ver |
+|---|---|---|
+| Guardia de secretos | «lee `.env`» (créalo antes) | Un rechazo que nombra los archivos de credenciales y apunta al `.example` |
+| Formateo automático | Pide agregar un método a un `.cs` con indentación descuidada | El archivo vuelve formateado y `make lint` sigue pasando |
+| Servidores MCP | `/mcp` | Conectados, no `⏸ Pending approval` |
+| `mslearn` | «¿qué hace `dotnet list package --vulnerable`, según la documentación oficial?» | Una respuesta que cita learn.microsoft.com |
+| `dbhub` | «¿cuántas filas tiene cada tabla?» | Conteos reales de `theoffice.db` (requiere `APP_DSN`) |
 
 ## 📡 Endpoints
 

@@ -1,0 +1,63 @@
+# Placeholders:
+#   {{SWEEP_COMMAND}}  — how this repo audits its dependencies. Prefer the Makefile target the
+#                        deterministic instrumentation already installed (`make audit`); fall back
+#                        to `dotnet list package --vulnerable --include-transitive` against the
+#                        solution. Take it from the repo, never invent it.
+#
+# Hook 4 — dependency sweep. SessionStart, matcher "startup|resume".
+# Tells the agent what is vulnerable BEFORE it writes code against those packages.
+#
+# WHY STDOUT AND NOT JSON: for SessionStart, Claude Code treats a hook's stdout as plain text and
+# adds it to the conversation's context. That removes the only place in this hook set where a
+# script would have had to BUILD JSON with arbitrary content in it — and building JSON in bash,
+# escaping quotes and newlines out of an MSBuild log, is exactly where these scripts would break.
+#
+# WHY IT NEVER FAILS THE SESSION: same rule as NuGetAudit in the deterministic half. A transitive
+# advisory published overnight is not a reason for the repo to stop working in the morning. It
+# reports; the human decides.
+#
+# WHY IT MUST BE FAST: this runs before the first prompt of every session. A slow SessionStart is
+# indistinguishable from a tool that starts badly. The timeout in settings.json is the backstop,
+# not the plan — if the sweep regularly takes longer than a few seconds, move it out of
+# SessionStart and into CI, and say so.
+#
+# NOTE ON --outdated: it is deliberately NOT run here. It needs a network round-trip per package
+# and returns a list nobody acts on at session start. Vulnerable is actionable; outdated is a
+# backlog grooming task.
+#
+# ---8<--- everything above this line is instructions for you; delete it ---8<---
+#!/usr/bin/env bash
+# `set -u` only. See the note in secret-read-guard.sh.
+set -u
+
+DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+. "$DIR/_lib.sh"
+
+hook_read_stdin
+
+ROOT="$(repo_root)"
+cd "$ROOT" || exit 0
+
+OUT="$({{SWEEP_COMMAND}} 2>&1)"
+STATUS=$?
+
+# A missing Makefile target, a solution that will not restore, a typo in the command — all of them
+# print nothing useful and exit non-zero, which without this check is INDISTINGUISHABLE from a
+# clean repository. Say so on stderr, where the user sees it, and still exit 0: this hook reports,
+# it never fails a session.
+if [ $STATUS -ne 0 ]; then
+  printf 'dependency-sweep: the audit command exited %s; no advisory report this session.\n' "$STATUS" >&2
+  printf '%s\n' "$OUT" | head -n 3 >&2
+  exit 0
+fi
+
+# `dotnet list package --vulnerable` exits 0 whether or not it found anything, so the exit code
+# says nothing. The findings are lines carrying a severity. No findings, no output: a hook that
+# prints "everything is fine" on every session start is noise that trains people to skip it.
+FINDINGS="$(printf '%s\n' "$OUT" | grep -E '(Critical|High|Moderate|Low)' || true)"
+[ -z "$FINDINGS" ] && exit 0
+
+printf 'Vulnerable NuGet packages in this repository (from a SessionStart hook, reported not enforced):\n\n'
+printf '%s\n' "$FINDINGS"
+printf '\nDo not add features on top of these without saying so. `dotnet list package --vulnerable --include-transitive` has the full report.\n'
+exit 0

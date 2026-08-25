@@ -8,3 +8,9 @@
 # An unexplained fingerprint is an unreviewed leak.
 #
 # This repo's history scanned clean when the gate was installed, so the file starts empty.
+
+# Clave AWS falsa usada como cadena de prueba en la documentación de la skill
+# instrument-project-dotnet: el texto explica cómo comprobar que el gate de secretos
+# dispara, y para eso necesita un patrón que gitleaks no tenga en su allowlist.
+# No es una credencial: no existe ninguna cuenta detrás. Decidido por David Lopera, 2026-08-25.
+.agents/skills/instrument-project-dotnet/references/verification.md:aws-access-token:176

@@ -6,6 +6,8 @@ ejecutar la skill para actualizarlo.
 
 Fecha de generación: 2026-08-20 · rama `session-02` · commit `cd1ca3b`.
 Actualizado: 2026-08-25 · rama `session-03` · tras instalar la instrumentación determinista.
+Actualizado: 2026-08-25 · rama `session-03` · tras instalar la instrumentación no determinista
+(hooks del agente y servidores MCP).
 
 ## Verificadas contra archivos del repo
 
@@ -45,6 +47,14 @@ Actualizado: 2026-08-25 · rama `session-03` · tras instalar la instrumentació
 | El proyecto de pruebas vive en `tests/`, fuera de `src/`, registrado en la solución con ruta relativa. | `src/TheOffice.sln` | alta | confirmada |
 | Solo `ProductService` tiene pruebas (11 métodos, 16 casos con los `InlineData`). | `tests/**/ProductServiceTests.cs` | alta | confirmada |
 | La app escucha en `http://localhost:5226`. | `launchSettings.json:17` | alta | confirmada |
+| `.claude/settings.json` registra dos hooks: `secret-read-guard` (`PreToolUse`) y `format-on-edit` (`PostToolUse`). | `.claude/settings.json`, `scripts/agent-hooks/` | alta | confirmada |
+| El guardia de secretos **bloquea** leer un `.env`, y deja pasar un archivo normal. | verificado disparándolo: `Read` sobre `hooktest/.env` rechazado, `Read` sobre `global.json` permitido | alta | confirmada |
+| El formateo automático deja el `.cs` recién escrito pasando la misma compuerta que `make lint`. | verificado escribiendo un `.cs` con `using` sin ordenar e indentación errónea; `dotnet format --verify-no-changes` sobre él salió 0 | alta | confirmada |
+| `dotnet format --include <ruta relativa a la raíz>` sí acota al archivo, ejecutado desde la raíz del repo. | verificado con el mismo archivo de prueba | alta | confirmada |
+| Formatear un solo archivo cuesta ~3,3 s; `make audit` cuesta ~7,2 s y hoy no reporta paquetes vulnerables. | medidos en esta máquina | media | confirmada (una sola máquina) |
+| `.gitignore` **no** tiene entrada para `.env`. | `grep -in env .gitignore` → 0 resultados | alta | confirmada |
+| `.mcp.json` registra `mslearn` (HTTP) y `dbhub` (stdio, `@bytebase/dbhub@1.2.1`), sin credenciales literales. | `.mcp.json` | alta | confirmada |
+| `@bytebase/dbhub@1.2.1` acepta `--transport stdio` y `--dsn`, y conecta contra el SQLite local. | ejecutado con el DSN real; salida `Tool registry initialized`, exit 0 | alta | confirmada |
 
 ## Inferidas del ecosistema .NET (no leídas de este repo)
 
@@ -82,3 +92,5 @@ corrige el doc, no el código.
 | Topología productiva y pipeline de despliegue. | no existen todavía | — | **abierta** → `TODO` en `docs/infrastructure.md`. El pipeline de **calidad** ya existe; el de **despliegue** no, porque no hay destino definido. |
 | Que el pipeline de CI efectivamente pase en el runner de GitHub. | escrito pero nunca ejecutado | media | **abierta** → se resuelve con el primer push. |
 | Que `check` sea un status check obligatorio en la protección de rama de `main`. | requiere configuración en GitHub, fuera del repo | alta | **abierta** → hasta entonces CI reporta, no bloquea. |
+| Que los servidores MCP de `.mcp.json` conecten en una sesión real. | el archivo está escrito y `dbhub` arranca a mano, pero los servidores quedan en `⏸ Pending approval` hasta que se confíe en el espacio de trabajo | alta | **abierta** → escritos, pendientes de aprobación. Se resuelve con `claude` en el repo + `/mcp`. |
+| Que los hooks funcionen sobre Git Bash en Windows. | escritos para bash 3.2 sin `jq`, pero solo ejecutados en macOS | media | **abierta** → nadie del equipo trabaja en Windows hoy. |

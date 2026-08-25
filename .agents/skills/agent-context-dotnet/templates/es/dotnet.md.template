@@ -1,0 +1,169 @@
+<!--
+Placeholders:
+  {{PROJECT_NAME}}
+  {{SOLUTION_FILES}}        — nombre(s) de archivo .sln / .slnx
+  {{TARGET_FRAMEWORKS}}     — ej. "net10.0 (api, core), net10.0-android/-ios (mobile)"
+  {{LANG_POSTURE}}          — ej. "C# 14, nullable habilitado, implicit usings"
+  {{PACKAGE_MANAGEMENT}}    — ej. "centralizada (Directory.Packages.props)" o "por proyecto"
+  {{EF_PROVIDER}}           — ej. "SQL Server (EF Core 10)" o "ninguno"
+  {{DI_CONTAINER}}          — ej. "integrado (Program.cs)" o "Autofac"
+  {{SECRETS_STRATEGY}}      — ej. "user-secrets (dev) + Azure Key Vault (prod)"
+  {{TEST_RUNNER}}           — ej. "Microsoft.Testing.Platform (global.json)" o "VSTest (por defecto)"
+  {{PACKAGING_SHAPE}}       — ej. "Dockerfile" / "publicación de contenedor con el SDK" / "publish dependiente del framework"
+Mantén este archivo en hechos propios de .NET que los docs genéricos no pueden contener. NO repitas
+architecture.md. Deja <!-- TODO --> donde no pudiste leer la respuesta. BORRA las secciones que no
+apliquen — una sección borrada es mejor que una sección llena de TODOs.
+-->
+
+# Guía de la Solución .NET — {{PROJECT_NAME}}
+
+Contexto .NET profundo para agentes de IA. Para el panorama general ve
+[arquitectura](./architecture.md), [modelo de datos](./data-model.md) e
+[infraestructura](./infrastructure.md).
+
+## 1. Solución y proyectos
+
+- **Archivo(s) de solución:** {{SOLUTION_FILES}}
+
+| Proyecto | Tipo | TFM | Propósito |
+|---|---|---|---|
+| <!-- Acme.Api --> | <!-- Web API --> | <!-- net10.0 --> | <!-- una línea --> |
+| | | | |
+
+**Referencias entre proyectos** (capas):
+
+```mermaid
+flowchart LR
+  api[Acme.Api] --> core[Acme.Core]
+  core --> infra[Acme.Infrastructure]
+```
+
+<!-- TODO: reemplaza con el grafo real de referencias entre proyectos. -->
+
+## 2. Target frameworks y lenguaje
+
+- **Target framework(s):** {{TARGET_FRAMEWORKS}}
+- **Postura del lenguaje:** {{LANG_POSTURE}}
+- **SDK fijado / props de build compartidas:** <!-- TODO: global.json, Directory.Build.props si existen -->
+
+## 3. Gestión de paquetes y dependencias
+
+- **Gestión de versiones:** {{PACKAGE_MANAGEMENT}}
+  <!-- Si es centralizada: un PackageReference en un .csproj NO debe llevar atributo Version — las
+       versiones viven en Directory.Packages.props como <PackageVersion>. Conserva esta línea; los
+       agentes se equivocan aquí. -->
+- **Feeds:** <!-- TODO: fuentes de nuget.config, incl. feeds privados. Borra si solo es nuget.org. -->
+- **Herramientas locales:** <!-- TODO: .config/dotnet-tools.json — si existe, los comandos son `dotnet tool restore` y luego `dotnet <tool>`. Borra si no existe. -->
+
+| Paquete | Versión | Rol |
+|---|---|---|
+| <!-- Microsoft.EntityFrameworkCore.SqlServer --> | | <!-- ORM --> |
+| | | |
+
+- **Salud de dependencias:** <!-- TODO: anota frescura de versiones / riesgo de vulnerabilidades solo si tienes una señal concreta. -->
+
+## 4. Orquestación con Aspire
+
+<!-- BORRA toda esta sección si no hay proyecto AppHost. -->
+
+- **AppHost:** <!-- TODO: proyecto + archivo; qué recursos compone (proyectos, BD, caché, colas) -->
+- **ServiceDefaults:** <!-- TODO: qué configura AddServiceDefaults() — OTel, health checks, service discovery, resiliencia de HttpClient -->
+- **Ejecuta el sistema con:** <!-- `aspire run` o `dotnet run --project <…>.AppHost` — NO cada servicio por separado -->
+- **Convención:** ServiceDefaults contiene solo cableado transversal compartido — no pongas modelos ni lógica de negocio ahí.
+
+## 5. Composition root / DI
+
+- **Contenedor:** {{DI_CONTAINER}}
+- **El registro vive en:** <!-- TODO: Program.cs / Startup.cs / *Extensions / módulos de Autofac -->
+- **Convenciones / lifetimes notables:** <!-- TODO: DbContext scoped, hosted services, options pattern, assembly scanning... -->
+
+## 6. Acceso a datos (EF Core)
+
+- **Proveedor:** {{EF_PROVIDER}}
+- **DbContext:** <!-- TODO: clase + ruta. Marca si es muy grande. -->
+- **Configuración del modelo:** <!-- TODO: data annotations / Fluent API / IEntityTypeConfiguration -->
+- **Query filters:** <!-- TODO: filtros globales o con nombre (scoping por tenant, soft delete) y si alguno puede deshabilitarse por nombre. Borra si no hay. -->
+- **Migraciones:** <!-- TODO: ruta + cómo se aplican (dotnet ef / Migrate() al arrancar / CI). Enlaza data-model.md -->
+
+## 7. Configuración y secretos
+
+- **Capas de configuración:** <!-- TODO: appsettings.json -> appsettings.{Env}.json -> user-secrets/env -> Key Vault -->
+- **Estrategia de secretos:** {{SECRETS_STRATEGY}}
+- **⚠ Secretos commiteados:** <!-- TODO: lista cualquier secreto encontrado (NO pegues el valor); recomienda user-secrets / Key Vault + appsettings.example.json. Borra esta línea si no hay. -->
+
+## 8. Build, ejecución y pruebas
+
+```bash
+# TODO: deja los 3-6 comandos que la gente realmente corre
+dotnet build
+dotnet run --project <proyecto principal>
+dotnet test
+dotnet ef migrations add <Nombre> --project <proyecto de BD>
+```
+
+- **Runner de pruebas:** {{TEST_RUNNER}}
+- **Framework(s) de pruebas:** <!-- TODO: xUnit / NUnit / MSTest -->
+- **Librerías de apoyo:** <!-- TODO: mocking, assertions, integración (WebApplicationFactory / Testcontainers), cobertura -->
+- **Organización de las pruebas:** <!-- TODO: por capa / por dominio / integración vs unitarias vs automatización -->
+
+## 9. Puertas de calidad
+
+| Puerta | Estado | Notas |
+|---|---|---|
+| `.editorconfig` | <!-- presente/ausente --> | |
+| Analizadores Roslyn (StyleCop / NetAnalyzers) | <!-- presente/ausente --> | |
+| Arch-linting (NsDepCop / ArchUnitNET) | <!-- presente/ausente --> | |
+| Warnings como errores | <!-- presente/ausente --> | |
+
+<!-- TODO: donde falte, recomienda adoptarlo para hacer cumplir las capas de §1. -->
+
+## 10. Superficie de UI y API
+
+<!-- TODO: deja solo lo que aplique; BORRA si es headless y sin superficie HTTP. -->
+
+- **Forma de la API:** <!-- minimal APIs / controllers; agrupación; enfoque de validación -->
+- **OpenAPI:** <!-- Microsoft.AspNetCore.OpenApi integrado (3.1 por defecto en .NET 10; WithOpenApi() está deprecado) / Swashbuckle / NSwag / Scalar -->
+- **Identidad:** <!-- ASP.NET Core Identity (¿passkeys?) / Entra ID / IdentityServer / JWT bearer -->
+- **Stack de UI:** <!-- Razor Pages / MVC / Blazor (render modes) / MAUI -->
+- **Cableado por plataforma (MAUI):** <!-- servicios en Platforms/Android y Platforms/iOS, handlers, deep links -->
+
+## 11. Despliegue y empaquetado
+
+- **Forma del empaquetado:** {{PACKAGING_SHAPE}}
+  <!-- Nota: el SDK puede construir imágenes de contenedor SIN Dockerfile con `dotnet publish /t:PublishContainer`
+       y <ContainerRepository> / <ContainerImageFormat>. No infieras "no está contenerizado" por la ausencia de Dockerfile. -->
+- **AOT / trimming / archivo único:** <!-- TODO: PublishAot, PublishTrimmed, TrimMode, PublishSingleFile, InvariantGlobalization. Borra si no hay. -->
+  <!-- Si alguno está activo, son restricciones duras: nada de reflexión sin límites ni JSON por reflexión — usa JsonSerializerContext generado. Repítelo en §13. -->
+- **Ubicación de salida:** <!-- TODO: ArtifactsPath si está configurado; si no, bin/obj por defecto. Borra si es el default. -->
+
+## 12. Preocupaciones transversales
+
+<!-- BORRA si el repo no tiene nada de esto. -->
+
+- **Observabilidad:** <!-- OpenTelemetry, health checks, Serilog/NLog -->
+- **Resiliencia:** <!-- Microsoft.Extensions.Http.Resilience / pipelines de Polly -->
+- **Integraciones de IA:** <!-- Microsoft.Extensions.AI, Semantic Kernel, ModelContextProtocol, .mcp.json -->
+
+<!-- Si hay Aspire (§4), anota que ServiceDefaults probablemente ya provee esto — extiéndelo, no lo re-registres por servicio. -->
+
+## 13. Trampas / puntos calientes
+
+<!-- TODO: lo no obvio que hace tropezar a un agente editando esta solución. Ejemplos:
+- El DbContext tiene ~9k LOC — divide los cambios con cuidado.
+- Los métodos son async pero no propagan CancellationToken — sigue el patrón existente.
+- PublishAot está activo: nada de serialización por reflexión.
+- El proyecto X no debe referenciar al proyecto Y (ver ADRs).
+- El código usa backing fields explícitos, no la palabra clave `field` de C# 14 — respétalo.
+-->
+
+## 14. Apps basadas en archivo
+
+<!-- BORRA salvo que el repo tenga scripts .cs sueltos (#:package / #:sdk / shebang). -->
+
+<!-- TODO: lístalos. Se ejecutan con `dotnet run <archivo>.cs`, usan native AOT por defecto en .NET 10,
+     y se pueden promover con `dotnet project convert`. -->
+
+## Docs relacionados
+
+- [Arquitectura](./architecture.md) · [Modelo de datos](./data-model.md) · [Infraestructura](./infrastructure.md) · [Decisiones](./adrs/)
+<!-- Agrega aquí los docs preexistentes del repo en lugar de repetirlos. -->
