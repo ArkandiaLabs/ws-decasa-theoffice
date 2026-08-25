@@ -121,7 +121,13 @@ El repositorio trae dos hooks y dos servidores MCP. Qué hace cada uno está en
 **Los hooks son de Claude Code.** Los scripts de `scripts/agent-hooks/` son shell portable, pero
 el registro vive en `.claude/settings.json` y hoy no lo lee ningún otro agente: en Codex, Cursor o
 Copilot **no corren**. Tampoco son una frontera de seguridad — corren con tu shell y tus permisos,
-y comparan texto, no intención.
+y leen el comando, no la intención: un nombre que el comando arma en tiempo de ejecución
+(`cat "$SECRET_FILE"`) les pasa por debajo.
+
+El guardia de secretos distingue **un archivo que se abre de un nombre que solo se menciona**.
+Bloquea `cat .env`, y deja pasar un `echo`, un mensaje de commit o un heredoc que hablen del
+archivo. Si te bloquea algo que no abre nada, es un bug: repórtalo, no lo esquives.
+Esa distinción la fija un suite de 42 casos: `make hooks-test`, incluido en `make check`.
 
 **Variables de entorno.** Ninguna se versiona; el archivo `.mcp.json` solo guarda su nombre.
 
@@ -150,6 +156,8 @@ funciona en silencio. Una línea por cada cosa instalada:
 | Instalado | Pide al agente / ejecuta | Deberías ver |
 |---|---|---|
 | Guardia de secretos | «lee `.env`» (créalo antes) | Un rechazo que nombra los archivos de credenciales y apunta al `.example` |
+| …y que no se pase de listo | «haz `echo "nota sobre .env"`» | Que corra. Mencionar el nombre no es abrirlo |
+| El suite que fija esa línea | `make hooks-test` | 42/42 |
 | Formateo automático | Pide agregar un método a un `.cs` con indentación descuidada | El archivo vuelve formateado y `make lint` sigue pasando |
 | Servidores MCP | `/mcp` | Conectados, no `⏸ Pending approval` |
 | `mslearn` | «¿qué hace `dotnet list package --vulnerable`, según la documentación oficial?» | Una respuesta que cita learn.microsoft.com |

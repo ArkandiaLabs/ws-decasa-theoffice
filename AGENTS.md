@@ -42,6 +42,7 @@ make lint      # verifica el estilo, sin modificar nada
 make format    # corrige el estilo en el sitio
 make secrets   # escanea el árbol de trabajo en busca de secretos
 make audit     # reporta dependencias vulnerables (solo informa, nunca falla)
+make hooks-test # prueba los hooks del agente (42 casos, no toca .NET)
 ```
 
 Las migraciones siguen siendo un comando de EF Core, desde `src/`
@@ -66,6 +67,8 @@ make check    # señal única de confianza: lint + build + test
 - **Estilo o imports:** `make lint` (y `make format` para corregirlo)
 - **Cambio de capa o de arquitectura:** `make test` — lo verifican las pruebas de arquitectura
 - **Dependencia NuGet:** `make build` — la auditoría de NuGet corre sola
+- **Cambio en `scripts/agent-hooks/`:** `make hooks-test` — y sincroniza la plantilla de la
+  skill `instrument-agent-dotnet`, que hoy es el mismo archivo con otro encabezado
 
 ## Integración continua
 
@@ -82,11 +85,14 @@ rama. Ver [infraestructura](./docs/infrastructure.md).
 
 `.claude/settings.json` registra dos hooks, implementados en `scripts/agent-hooks/`. Corren
 **solo bajo Claude Code**: los scripts son shell portable, pero el registro no lo lee ningún otro
-agente. No son una frontera de seguridad — corren con tu shell y tus permisos, y comparan texto.
+agente. No son una frontera de seguridad — corren con tu shell y tus permisos, y leen el comando,
+no la intención: un nombre que el comando construye en tiempo de ejecución les pasa por debajo.
 
 - **`secret-read-guard.sh`** — `PreToolUse`. **Bloquea** leer archivos de credenciales: `.env`,
   llaves privadas (`*.pem`, `*.pfx`, `id_rsa`), `secrets.json`, `.ssh/`, `.aws/credentials`. Si te
-  lo rechaza, usa el archivo `.example` versionado o pide el valor al usuario — no es un bug.
+  lo rechaza al abrir uno de verdad, usa el `.example` versionado o pide el valor al usuario —
+  no es un bug. Solo mira los operandos que se abren: un `echo`, un mensaje de commit o un
+  heredoc que **mencionen** el archivo pasan. Un rechazo sobre algo que no abre nada sí es un bug.
 - **`format-on-edit.sh`** — `PostToolUse`. Corre `dotnet format` sobre el `.cs` recién escrito, y
   solo sobre ese archivo. **No gastes turnos en indentación ni en el orden de los `using`.** Nunca
   bloquea.

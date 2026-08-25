@@ -49,6 +49,9 @@ Actualizado: 2026-08-25 · rama `session-03` · tras instalar la instrumentació
 | La app escucha en `http://localhost:5226`. | `launchSettings.json:17` | alta | confirmada |
 | `.claude/settings.json` registra dos hooks: `secret-read-guard` (`PreToolUse`) y `format-on-edit` (`PostToolUse`). | `.claude/settings.json`, `scripts/agent-hooks/` | alta | confirmada |
 | El guardia de secretos **bloquea** leer un `.env`, y deja pasar un archivo normal. | verificado disparándolo: `Read` sobre `hooktest/.env` rechazado, `Read` sobre `global.json` permitido | alta | confirmada |
+| El guardia distingue un archivo que se abre de un nombre que solo se menciona: deniega `cat .env`, un operando entre comillas, una redirección y una asignación; permite `echo`, `printf`, `-m`/`--message`, cuerpos de heredoc y here-strings que nombren el archivo. | 39 casos ejecutados contra el hook con payloads reales, sobre `scripts/agent-hooks/` y sobre la plantilla de la skill; 39/39 | alta | confirmada |
+| Los tres comandos que el guardia bloqueó por error en la sesión del 2026-08-25 hoy pasan. | reejecutados verbatim contra el hook, y versionados como regresión en el suite | alta | confirmada |
+| `make hooks-test` corre el suite del guardia, y `check` y `ci` lo incluyen. | `Makefile`, `scripts/agent-hooks/tests/` | alta | confirmada |
 | El formateo automático deja el `.cs` recién escrito pasando la misma compuerta que `make lint`. | verificado escribiendo un `.cs` con `using` sin ordenar e indentación errónea; `dotnet format --verify-no-changes` sobre él salió 0 | alta | confirmada |
 | `dotnet format --include <ruta relativa a la raíz>` sí acota al archivo, ejecutado desde la raíz del repo. | verificado con el mismo archivo de prueba | alta | confirmada |
 | Formatear un solo archivo cuesta ~3,3 s; `make audit` cuesta ~7,2 s y hoy no reporta paquetes vulnerables. | medidos en esta máquina | media | confirmada (una sola máquina) |
