@@ -1,9 +1,9 @@
+using TheOffice.Application.DTOs;
+using TheOffice.Application.Interfaces.Adapters;
+using TheOffice.Application.Interfaces.Persistence;
+using TheOffice.Application.Mappers;
 using TheOffice.Domain.Common;
 using TheOffice.Domain.Enums;
-using TheOffice.Application.DTOs;
-using TheOffice.Application.Mappers;
-using TheOffice.Application.Interfaces.Persistence;
-using TheOffice.Application.Interfaces.Adapters;
 
 namespace TheOffice.Application.Services;
 

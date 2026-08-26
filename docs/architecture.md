@@ -29,8 +29,10 @@ y no hay SLA.
   OpenAPI 3.1 vía `Microsoft.AspNetCore.OpenApi` y Scalar como UI.
 - **Persistencia:** SQLite + EF Core 10.0.10, migraciones de EF Core.
 - **Despliegue:** aún sin definir.
-- **CI/CD:** ninguno en el repo (no hay `.github/workflows/`, `Jenkinsfile` ni `azure-pipelines.yml`).
-  La intención es que CI despliegue al hacer merge a `main`, pero todavía no está implementado.
+- **CI/CD:** GitHub Actions (`.github/workflows/ci.yml`) con compuertas de calidad en cada push:
+  estilo, compilación estricta, pruebas y escaneo de secretos, vía `make ci`. **No despliega** —
+  la intención es que CI despliegue al hacer merge a `main`, pero eso todavía no está implementado.
+  Ver [infraestructura](./infrastructure.md).
 
 ## Patrón
 
@@ -82,14 +84,25 @@ flowchart TD
   PER --> DB
 ```
 
-## Reglas clave (reforzadas por la arquitectura, no por el linter)
+## Reglas clave
 
-Nada de esto lo verifica una herramienta — no hay arch-linting ni analizadores. Es disciplina.
+La dirección de dependencias **ya no es solo disciplina**: la verifica
+`tests/TheOffice.ArchitectureTests` con ArchUnitNET, y `make test` se pone rojo cuando se rompe.
+Las nueve reglas están listadas en [la guía .NET](./dotnet.md) §8.
+
+Verificadas por una prueba:
 
 - **`TheOffice.Domain` no referencia ninguna otra capa.** Justificación:
   [ADR-0001](./adrs/adr-0001-target-framework-net10.md) y el principio de dependencias hacia adentro.
 - **`TheOffice.Application` define los puertos; la infraestructura los implementa.** Un servicio
-  nunca toca `TheOfficeDbContext` ni un tipo de `Persistence.Models`.
+  nunca toca `TheOfficeDbContext` ni un tipo de `Persistence.Models`. Las interfaces terminadas en
+  `Repository` o `Adapter` viven en `TheOffice.Application.Interfaces`.
+- **`TheOffice.Api` es el punto de entrada y nadie depende de él.**
+- **`Persistence` y `Adapters` no se referencian entre sí.** Lo compartido sube a `Application`.
+- **Solo `Adapters` escribe a la consola.** La salida pasa por su puerto.
+
+Todavía disciplina, porque ninguna herramienta las alcanza — siguen dependiendo de la revisión:
+
 - **Los controllers no contienen lógica de negocio.** Llaman a un servicio y traducen `Result` a HTTP.
 - **No se lanzan excepciones para control de flujo.** Fallas esperadas → `Result.Failure(...)`.
   Justificación: [ADR-0003](./adrs/adr-0003-result-pattern.md).

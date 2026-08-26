@@ -1,9 +1,11 @@
 using Asp.Versioning;
+
 using Microsoft.EntityFrameworkCore;
+
 using Scalar.AspNetCore;
 
-using TheOffice.Application;
 using TheOffice.Adapters;
+using TheOffice.Application;
 using TheOffice.Persistence;
 
 const string CorsPolicy = "TheOfficeFrontends";

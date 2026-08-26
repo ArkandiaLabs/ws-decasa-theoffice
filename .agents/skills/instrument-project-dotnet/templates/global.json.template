@@ -1,0 +1,31 @@
+// Placeholders:
+//   {{SDK_VERSION}}  — NOT simply `dotnet --version`. See below.
+//
+// If global.json already exists, MERGE: add the "sdk" block and preserve every other section
+// ("test", "msbuild-sdks", …). Rewriting the file is a bug.
+//
+// CHOOSING THE VERSION
+// rollForward only moves forward, never backward. Pinning the version installed on the machine
+// that runs the skill locks out every teammate on a lower feature band, and the pin gets deleted
+// within a week — worse than no pin at all.
+//
+//   With version 10.0.400:
+//     disable         only 10.0.400
+//     latestPatch     10.0.4xx            — fails on 10.0.300
+//     latestFeature   10.0.4xx and above  — also fails on 10.0.300
+//     latestMinor     any higher 10.x
+//
+// Default: the LOWEST feature band of the installed major.minor, with latestFeature.
+// With 10.0.400 installed that is "10.0.100" — every 10.0.x satisfies it, major.minor still locked.
+//
+// Strict variant, only when the SDK is centrally controlled (devcontainer, pinned CI image):
+//   "version": "<dotnet --version exactly>", "rollForward": "latestPatch"
+//
+// Delete this header — JSON has no comments.
+{
+  "sdk": {
+    "version": "{{SDK_VERSION}}",
+    "rollForward": "latestFeature",
+    "allowPrerelease": false
+  }
+}

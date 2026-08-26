@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 
-using TheOffice.Application.Interfaces.Adapters;
 using TheOffice.Adapters.Notification;
+using TheOffice.Application.Interfaces.Adapters;
 
 namespace TheOffice.Adapters;
 

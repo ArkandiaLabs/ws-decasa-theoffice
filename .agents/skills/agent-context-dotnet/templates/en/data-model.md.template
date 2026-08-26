@@ -1,0 +1,51 @@
+<!--
+Placeholders:
+  {{PROJECT_NAME}}
+  {{MIGRATION_TOOL}}         — normally "EF Core migrations"; note the version if you read it
+  {{MIGRATIONS_PATH}}        — e.g. "src/Infrastructure/Migrations/"
+-->
+
+# Data Model — {{PROJECT_NAME}}
+
+## Overview
+
+<!-- TODO: one paragraph. What does this database store? What are the top 3-5 entities and how do they relate? -->
+
+## Migration tool
+
+- **Tool:** {{MIGRATION_TOOL}}
+- **Location:** `{{MIGRATIONS_PATH}}`
+- **Workflow:** <!-- TODO: how a new migration is created and applied locally / in CI. -->
+
+## Entity-relationship diagram
+
+```mermaid
+erDiagram
+  ENTITY_A ||--o{ ENTITY_B : "has many"
+  ENTITY_B }o--|| ENTITY_C : "belongs to"
+```
+
+<!-- TODO: replace with real entities. Keep it under 12 boxes — delegate legacy/rare tables to a "Full schema" appendix. -->
+
+## Tables
+
+### Core
+
+| Table | Purpose | Key relationships |
+|---|---|---|
+| <!-- table_name --> | <!-- one line --> | <!-- FK summary --> |
+
+### Reference / lookup
+
+| Table | Purpose |
+|---|---|
+| | |
+
+## Row-level security / access control
+
+<!-- TODO: if the DB uses RLS, tenant filters, or app-layer guards, describe the invariant here. Agents must NOT add queries that bypass this. -->
+
+## Related docs
+
+- [Architecture](./architecture.md)
+- [Decisions](./adrs/)

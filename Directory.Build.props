@@ -1,0 +1,69 @@
+<Project>
+
+  <PropertyGroup>
+    <!--
+      TargetFramework is NOT set here on purpose. MSBuild imports this file before the body of
+      each .csproj, so every project that declares its own TargetFramework overrides whatever is
+      written here. All six projects declare net10.0, so a value here would be inert and would
+      read as though the framework were centralised. See ADR-0001.
+    -->
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- A warning stops being an opinion. -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <!-- .editorconfig rules run inside the build, not only in whoever's IDE has them on. -->
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <!-- Required for IDE0005 (unnecessary using directives) to be reported on a command-line
+         build. Without it Roslyn skips the rule and warns that this property is missing, so the
+         style gate quietly loses one of its most useful rules. dotnet/roslyn issue 41640. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!--
+      Exceptions. Every entry needs a reason and an owner; remove one when its reason expires.
+
+      CS1591 (missing XML comment for a publicly visible type or member) is a side effect of
+      GenerateDocumentationFile above, which is switched on for IDE0005 rather than to ship API
+      docs. This repo has no XML documentation and does not publish a library, so the rule would
+      fail the build on every public type for no benefit. Owner: equipo TheOffice.
+      Revisit if any project is ever packaged as a NuGet library.
+    -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!--
+      A vulnerable dependency breaks the build.
+
+      This is the one setting here that can turn a green commit red with nobody touching the
+      repository: a newly published advisory against a dependency you already have fails the next
+      build. That is intended, but it is a decision the team accepts rather than a default. To
+      soften it, raise NuGetAuditLevel to moderate or set NuGetAuditMode to direct, and record the
+      reason right here.
+    -->
+    <NuGetAudit>true</NuGetAudit>
+    <NuGetAuditLevel>low</NuGetAuditLevel>
+    <NuGetAuditMode>all</NuGetAuditMode>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Freeze the resolved dependency tree, transitives included. The generated
+         packages.lock.json files belong in version control: CI restores in locked mode and fails
+         when they drift from the projects. -->
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Same inputs, same binary. -->
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(TF_BUILD)' == 'true' or '$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+</Project>

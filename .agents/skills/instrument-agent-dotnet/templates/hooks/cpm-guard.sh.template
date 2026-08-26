@@ -1,0 +1,71 @@
+# Placeholders: none.
+#
+# Hook 6 — Central Package Management guard. PostToolUse, matcher "Edit|Write|MultiEdit".
+# Tells the agent when it has just put a Version attribute back into a .csproj.
+#
+# BEFORE INSTALLING, CONFIRM THE REPO IS ALREADY CLEAN. This hook re-reads the whole project file
+# on every edit, so a `.csproj` that ALREADY pins a version — left over from before the central
+# file existed — makes it fire on every turn, for something the agent did not write. That is a
+# refactoring proposal wearing a sensor's clothes, and it is how a hook set gets switched off.
+# Phase 1 already greps for this; if any project is dirty, report the count and offer to fix those
+# first, or leave the hook out. Same rule as the sibling skill's architecture tests: a control
+# that installs red is not a control.
+#
+# ONLY INSTALL THIS WHEN Directory.Packages.props EXISTS. Without central package management a
+# Version on a PackageReference is the normal, correct way to declare a dependency, and this hook
+# would fire on every `dotnet add package`. That is the fastest way to get a whole hook set
+# switched off. Phase 1 decides; Phase 3 hides the option and says why.
+#
+# WHY IT WARNS INSTEAD OF BLOCKING: PostToolUse runs after the write. There is nothing left to
+# stop, and the fix is one attribute — the agent can do it on the next turn if it is told. It is
+# a PostToolUse hook rather than a PreToolUse one because a `Version=` attribute is only wrong in
+# the presence of the file at the repo root, and reading that is cheaper after the fact than
+# reconstructing the intended file content from an Edit payload.
+#
+# WHY IT MATTERS: with CPM in force, a Version on a PackageReference does not error. NuGet emits
+# NU1008 in most configurations, but under a lock file or a Directory.Packages.props that also
+# lists the package, the build can go green while two projects resolve different versions — the
+# exact drift central package management was installed to end.
+#
+# ---8<--- everything above this line is instructions for you; delete it ---8<---
+#!/usr/bin/env bash
+# `set -u` only. See the note in secret-read-guard.sh.
+set -u
+
+DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+. "$DIR/_lib.sh"
+
+hook_read_stdin
+
+FILE="$(json_path file_path)"
+[ -z "$FILE" ] && exit 0
+
+case "$FILE" in
+  *.csproj|*.fsproj|*.vbproj) ;;
+  *) exit 0 ;;
+esac
+
+[ -f "$FILE" ] || exit 0
+
+# Read the file rather than the payload: an Edit delivers a diff, not the result, so the payload
+# cannot answer "does this project now carry a version".
+#
+# Fold the file to one line before matching. Visual Studio writes multi-line elements as a matter
+# of course:
+#
+#   <PackageReference Include="Serilog"
+#                     Version="4.2.0" />
+#
+# A line-oriented grep sees neither line as a violation and the hook reports nothing — the silent
+# pass this whole hook set is written to avoid. Both spellings of a pinned version are checked:
+# the Version attribute, and <Version> as a child element.
+FLAT="$(tr '\n' ' ' < "$FILE")"
+COUNT="$(printf '%s' "$FLAT" \
+  | grep -oE '<PackageReference[^>]*[[:space:]]Version[[:space:]]*=|<PackageReference[^>]*>[^<]*<Version>' \
+  | grep -c . || true)"
+[ "${COUNT:-0}" -eq 0 ] && exit 0
+
+REASON="$(printf 'This repository keeps package versions in one central file, so %s <PackageReference> in %s must not pin its own. Move each version to a <PackageVersion> entry in Directory.Packages.props and leave only Include (plus PrivateAssets/IncludeAssets) on the reference.' "$COUNT" "$(basename "$FILE")")"
+
+printf '{"decision":"block","reason":"%s"}' "$(json_escape "$REASON")"
+exit 0

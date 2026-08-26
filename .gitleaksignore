@@ -1,0 +1,16 @@
+# Fingerprints of findings gitleaks reports that are NOT secrets.
+#
+# One fingerprint per line, in the form printed by gitleaks when it blocks:
+#   <commit>:<file>:<rule-id>:<line>
+# For a finding in the working tree (gitleaks protect) the commit part is empty.
+#
+# Every entry needs a comment saying why it is not a secret and who decided that.
+# An unexplained fingerprint is an unreviewed leak.
+#
+# This repo's history scanned clean when the gate was installed, so the file starts empty.
+
+# Clave AWS falsa usada como cadena de prueba en la documentación de la skill
+# instrument-project-dotnet: el texto explica cómo comprobar que el gate de secretos
+# dispara, y para eso necesita un patrón que gitleaks no tenga en su allowlist.
+# No es una credencial: no existe ninguna cuenta detrás. Decidido por David Lopera, 2026-08-25.
+.agents/skills/instrument-project-dotnet/references/verification.md:aws-access-token:176

@@ -1,0 +1,82 @@
+# Placeholders:
+#   {{SOLUTION_PATH}}      — e.g. src/TheOffice.slnx or src/TheOffice.sln. Use whichever the repo
+#                            actually has: .slnx has been supported since SDK 9.0.200, and .NET 10
+#                            made it the default for `dotnet new sln`, so both are current.
+#   {{API_PROJECT}}        — the runnable entry point; drop the `run` target if there is none
+#   {{ARCH_TEST_PROJECT}}  — drop the `arch` target if control 7 was skipped
+#   {{TEST_LOGGER}}        — the flag this repo's test runner needs to write a .trx, or empty
+#
+# Repo root. `make check` is the single confidence signal; `make ci` is what the pipeline calls.
+# Recipe lines must start with a TAB, not spaces.
+#
+# Drop `restore-locked` if the repo opted out of lock files, and `secrets` if it opted out of
+# gitleaks — and drop them from the `ci` target too.
+#
+# `test` and `arch` depend on `build` on purpose. With `--no-build` and no dependency they run
+# whatever binaries happen to be on disk, so a freshly written failing test reports green.
+#
+# `audit` is deliberately NOT in the `ci` chain: `dotnet list package --vulnerable` exits 0 even
+# when it prints High-severity findings, so it can report but never gate. The gate for the same
+# risk is NuGetAudit in Directory.Build.props, which raises NU1901-NU1904 as build warnings and,
+# under TreatWarningsAsErrors, fails the build.
+#
+# Windows: make does not ship with the OS. Document `winget install ezwinports.make` in the repo
+# README as a prerequisite. Delete this header before writing the file.
+
+SLN := {{SOLUTION_PATH}}
+API := {{API_PROJECT}}
+ARCH := {{ARCH_TEST_PROJECT}}
+
+# CI publishes test results, so the run has to produce a file. VSTest wants `--logger trx`;
+# Microsoft.Testing.Platform wants `--report-trx`. Set the one this repo's runner accepts, or
+# leave empty and delete the publish step from the pipeline.
+TEST_LOGGER := {{TEST_LOGGER}}
+
+.DEFAULT_GOAL := help
+.PHONY: help restore restore-locked build test arch format lint secrets audit check ci run clean hooks
+
+help: ## Show this help
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
+	  awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
+
+restore: ## Restore NuGet dependencies
+	dotnet restore $(SLN)
+
+restore-locked: ## Restore with the lock file enforced (what CI runs)
+	dotnet restore $(SLN) --locked-mode
+
+build: ## Build (strict: warnings are errors)
+	dotnet build $(SLN) --no-restore
+
+test: build ## Run every test
+	dotnet test $(SLN) --no-build $(TEST_LOGGER)
+
+arch: build ## Run architecture tests only
+	dotnet test $(ARCH) --no-build $(TEST_LOGGER)
+
+format: ## Fix code style in place
+	dotnet format $(SLN) --no-restore
+
+lint: ## Verify code style (gate)
+	dotnet format $(SLN) --no-restore --verify-no-changes
+
+secrets: ## Scan the working tree for committed secrets
+	gitleaks detect --no-banner --redact
+
+audit: ## Report vulnerable dependencies (report only, never fails)
+	dotnet list $(SLN) package --vulnerable --include-transitive
+
+check: restore lint build test ## Single confidence signal
+	@echo "OK — the repo is green"
+
+ci: restore-locked lint build test secrets ## What the pipeline runs
+	@echo "OK — CI gates passed"
+
+run: ## Run the application
+	dotnet run --project $(API)
+
+clean: ## Remove build artifacts
+	dotnet clean $(SLN)
+
+hooks: ## Install git hooks (Lefthook)
+	lefthook install

@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 
-using TheOffice.Persistence.Models;
 using TheOffice.Domain.Enums;
+using TheOffice.Persistence.Models;
 
 namespace TheOffice.Persistence.Seeders;
 

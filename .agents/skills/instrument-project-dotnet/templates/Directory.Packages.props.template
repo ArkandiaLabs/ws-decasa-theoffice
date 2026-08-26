@@ -1,0 +1,72 @@
+<!--
+Placeholders:
+  {{PACKAGE_VERSIONS}}  — one <PackageVersion> per distinct package in the solution
+
+Repo root. Central package management: one place declares every version, the projects declare
+only what they use.
+
+THIS IS A MIGRATION, NOT A FILE DROP. Writing this file without editing the projects breaks the
+build. The full sequence:
+
+  1. Collect every <PackageReference Include="X" Version="Y" /> across the solution.
+  2. Where the same package appears at more than one version, ASK which wins. Report the drift.
+  3. Write one <PackageVersion> per package here.
+  4. Edit every .csproj: remove the Version attribute, keep everything else
+     (PrivateAssets, IncludeAssets, ExcludeAssets, the child elements).
+  5. Delete every obj/ directory, then run `dotnet restore` and confirm it succeeds. The
+     project.assets.json left over from the pre-migration state makes restore fail with errors
+     that point at packages rather than at the migration, which is the wrong trail entirely.
+
+NEVER PUT TWO CONSECUTIVE HYPHENS IN A COMMENT.
+XML forbids the sequence inside a comment, so MSBuild cannot load the file. It is easy to hit here,
+because the skill asks you to justify every exception and command-line flags are the natural way to
+name one. Write the flag as prose instead: "locked mode", not the flag spelling.
+
+The failure gives you nothing to work with. `dotnet restore` reports
+
+  MSB4181: The "RestoreTask" task returned false but did not log an error
+
+with no file and no line. If a build starts failing right after this file is edited, validate it
+before investigating anything else:
+
+  dotnet msbuild <any-project> -getProperty:TargetFramework
+
+That surfaces the real XML error, naming the file and the line.
+
+After the migration a project reference looks like:
+
+  <PackageReference Include="Microsoft.EntityFrameworkCore" />
+
+CentralPackageTransitivePinningEnabled pins transitive dependencies too, which is what closes the
+"it resolved differently today" gap. Turn it off only if it breaks a restore you cannot otherwise
+fix, and say why.
+
+CentralPackageVersionOverrideEnabled is set to false because NuGet defaults it to true, and the
+default leaves the escape hatch open: any project can add VersionOverride to a PackageReference
+and go back to its own version, silently, in the one file nobody rereads. That is the exact drift
+this migration was run to remove, so leaving it available makes the file a convention rather than
+a control. With it false, restore fails with NU1013 and names the project — a build error, which
+is a conversation, instead of a divergence nobody sees for six months.
+
+This is a real constraint, not a formality, so SAY IT IN THE PHASE 6 REPORT alongside the file:
+after this, a project that genuinely needs a different version raises it here or states its case,
+and the answer is usually a second PackageVersion under a condition rather than an override. If a
+repo turns out to have a legitimate exception the team will not give up, turn it back on and
+record which project needs it and why — an override nobody can explain is the failure mode; an
+override with a reason next to it is not.
+
+Delete this header before writing the file.
+-->
+<Project>
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+    <CentralPackageVersionOverrideEnabled>false</CentralPackageVersionOverrideEnabled>
+  </PropertyGroup>
+
+  <ItemGroup>
+{{PACKAGE_VERSIONS}}
+  </ItemGroup>
+
+</Project>

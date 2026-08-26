@@ -1,6 +1,6 @@
-using TheOffice.Domain.Enums;
-using TheOffice.Domain.Entities;
 using TheOffice.Application.DTOs;
+using TheOffice.Domain.Entities;
+using TheOffice.Domain.Enums;
 
 namespace TheOffice.Application.Mappers;
 

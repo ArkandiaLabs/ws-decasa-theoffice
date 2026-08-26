@@ -1,5 +1,5 @@
-using TheOffice.Domain.Entities;
 using TheOffice.Application.DTOs;
+using TheOffice.Domain.Entities;
 
 namespace TheOffice.Application.Mappers;
 

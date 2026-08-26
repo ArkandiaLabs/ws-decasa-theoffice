@@ -1,0 +1,212 @@
+#!/usr/bin/env bash
+# `set -u` only, deliberately. `pipefail` turns SIGPIPE into a failed pipeline, so a filter that
+# short-circuits — `grep -q`, `head -1` — makes the whole guard silently fall through to allow.
+# That failure is invisible: the hook exits 0 and nothing is blocked. See references/hook-catalog.md.
+set -u
+
+DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+. "$DIR/_lib.sh"
+
+hook_read_stdin
+
+# Names that ARE the credential, not a reference to one. Anchored on a path or assignment
+# boundary so `deploy/keys/` does not match `.key` and `ENV_FILE=.env` still does.
+# Keep this list short: every pattern is a promise that the team will not have to argue with it.
+SECRET_PATTERNS='(^|[/=])\.env($|\.)|\.(pem|pfx|p12|jks|keystore|publishsettings)$|(^|[/=])id_(rsa|dsa|ecdsa|ed25519)$|(^|[/=])secrets\.json$|(^|[/=])appsettings\.[Ss]ecrets\.json$|(^|/)\.ssh/|(^|/)\.aws/credentials$'
+
+# Committed on purpose, hold no secret, and are the thing the agent should read instead. Checked
+# BEFORE the patterns and never stripped from the name: stripping `.example` off `.env.example`
+# leaves `.env`, and the guard then blocks the very file it is meant to point at.
+TEMPLATE_RE='\.(example|sample|template|dist)$'
+
+is_secret() {
+  printf '%s' "$1" | grep -Eq "$TEMPLATE_RE" && return 1
+  printf '%s' "$1" | grep -Eq "$SECRET_PATTERNS"
+}
+
+# operands <command-string> — the arguments of the command that could name a file to open,
+# one per line, unquoted.
+#
+# WHY THIS EXISTS. A Bash tool call carries no file_path: the only field is the command, so the
+# guard has to work out which of its words are operands. Matching every word in the string is what
+# the first version did, and it denies a command that merely SPEAKS the name — `echo "see .env"`,
+# a commit message mentioning the file, a heredoc explaining the convention. Those denials look
+# like the guard working, so they get worked around rather than reported, and the workaround is
+# usually to stop running the hook. Prose is not a path, and this splitter is the difference.
+#
+# The awk below is a small shell tokeniser. It is not a shell parser and does not try to be:
+# it tracks quoting, command separators, heredocs and redirections, which is enough to tell an
+# operand from a sentence. Four kinds of word are dropped, each for the same reason — nothing
+# opens them:
+#
+#   1. operands of a text emitter (echo, printf, :) — output, not input.
+#   2. the body of a heredoc, and the word after `<<<` — data fed to a command, not a file name.
+#   3. the value of -m / --message — a message is prose by definition.
+#   4. a QUOTED word containing a space — English, not a filename. An unquoted word cannot hold
+#      a space, and a real path with one is rare enough to be worth the miss.
+#
+# The command name itself IS emitted: `./.env` as a command is still an open.
+#
+# A redirection target is emitted even inside a suppressed segment, because `>` and `<` open a
+# file whatever the command is. `echo x > .env` stays denied.
+operands() {
+  # JSON escapes -> real separators, BEFORE any backslash is removed. A multi-line Bash command
+  # arrives as the two characters \ and n, not as a newline. Strip the backslash first and
+  # `cat .env\necho done` fuses into the single token `.envnecho`, which the anchored pattern
+  # misses — and Claude Code emits multi-line Bash constantly, so that is the NORMAL case, not an
+  # exotic one. Newline must survive as a newline here: it ends a command and closes a heredoc.
+  #
+  # `\"` becomes a real quote in the same pass. A double-quoted argument reaches us as \"src/.env\"
+  # — the payload's own escaping — and a tokeniser that does not undo it sees the quote as part of
+  # the word: `"src/.env"` fails the anchored pattern, and a quoted operand walks straight through.
+  # It also breaks the opposite case, splitting a -m message into loose words the skip cannot
+  # cover. Only `\"` is undone, and only after json_path has already resolved `\\`; the general
+  # un-escaping that _lib.sh warns against is still not attempted here.
+  printf '%s' "$1" \
+    | sed -E 's/\\n/\
+/g; s/\\[rt]/ /g; s/\\"/"/g' \
+    | awk '
+    { src = src $0 "\n" }
+
+    function basename(p) { sub(/.*\//, "", p); return p }
+
+    # Start of a new command: the next word is a command name, and the per-segment state resets.
+    function newseg() { seg_first = 1; suppress = 0; skip_next = 0 }
+
+    # Skip the heredoc body: everything up to a line that is exactly the delimiter.
+    function skip_heredoc(   line, nl) {
+      while (i <= n) {
+        nl = index(substr(src, i), "\n")
+        if (nl == 0) { i = n + 1; return }
+        line = substr(src, i, nl - 1)
+        i += nl
+        gsub(/^[ \t]+|[ \t]+$/, "", line)
+        if (line == delim) return
+      }
+    }
+
+    END {
+      n = length(src)
+      i = 1
+      newseg()
+      delim = ""
+      redir = 0
+
+      while (i <= n) {
+        c = substr(src, i, 1)
+
+        if (c == " " || c == "\t") { i++; continue }
+
+        if (c == "\n") {
+          i++
+          # A heredoc opened on this line: its body starts now.
+          if (delim != "") { skip_heredoc(); delim = "" }
+          newseg()
+          continue
+        }
+
+        # `<<<` feeds a string, `<<` opens a heredoc, a lone `<` or `>` redirects a file.
+        if (c == "<" || c == ">") {
+          if (substr(src, i, 3) == "<<<") { i += 3; skip_next = 1; continue }
+          if (substr(src, i, 2) == "<<") {
+            i += 2
+            if (substr(src, i, 1) == "-") i++
+            while (i <= n && (substr(src, i, 1) == " " || substr(src, i, 1) == "\t")) i++
+            delim = ""
+            while (i <= n) {
+              c = substr(src, i, 1)
+              if (c == " " || c == "\t" || c == "\n" || c == ";" || c == "|" || c == "&") break
+              if (c != "\"" && c != "'"'"'" && c != "\\") delim = delim c
+              i++
+            }
+            continue
+          }
+          i++
+          redir = 1
+          continue
+        }
+
+        # Command separators. `(` `)` and a backtick open a subshell, which is a new command too.
+        if (index(";|&()`", c) > 0) { i++; newseg(); continue }
+
+        # One word, with quotes resolved.
+        tok = ""; quoted = 0; spaced = 0
+        while (i <= n) {
+          c = substr(src, i, 1)
+          if (c == "'"'"'") {
+            quoted = 1; i++
+            while (i <= n && substr(src, i, 1) != "'"'"'") {
+              c = substr(src, i, 1)
+              if (c == " " || c == "\t" || c == "\n") spaced = 1
+              tok = tok c; i++
+            }
+            i++
+            continue
+          }
+          if (c == "\"") {
+            quoted = 1; i++
+            while (i <= n && substr(src, i, 1) != "\"") {
+              c = substr(src, i, 1)
+              if (c == "\\") { i++; c = substr(src, i, 1) }
+              if (c == " " || c == "\t" || c == "\n") spaced = 1
+              tok = tok c; i++
+            }
+            i++
+            continue
+          }
+          if (c == " " || c == "\t" || c == "\n" || index(";|&()<>`", c) > 0) break
+          if (c == "\\") { i++; c = substr(src, i, 1) }
+          tok = tok c; i++
+        }
+
+        if (tok == "") continue
+
+        if (redir) { print tok; redir = 0; continue }
+
+        if (seg_first) {
+          # A leading VAR=value is an assignment, not the command name: `ENV_FILE=.env cat "$f"`
+          # keeps looking for the real command, and the assignment itself is still an operand.
+          if (tok ~ /^[A-Za-z_][A-Za-z0-9_]*=/) { print tok; continue }
+          seg_first = 0
+          suppress = (basename(tok) ~ /^(echo|printf|:)$/)
+          print tok
+          continue
+        }
+
+        if (skip_next) { skip_next = 0; continue }
+        if (tok == "-m" || tok == "--message") { skip_next = 1; continue }
+        if (suppress) continue
+        if (quoted && spaced) continue
+
+        print tok
+      }
+    }
+  '
+}
+
+TOOL="$(json_raw tool_name)"
+
+case "$TOOL" in
+  Bash|PowerShell)
+    CMD="$(json_path command)"
+    [ -z "$CMD" ] && exit 0
+    # Trailing glob characters go, so `cat .env*` still reads as `.env`. A glob that does not
+    # spell the name — `cat .en?` — still passes. That is deliberate evasion rather than a
+    # mistake, and this guard is a guardrail against mistakes.
+    HIT="$(operands "$CMD" \
+      | sed -E 's/[*?]+$//' \
+      | grep -v -E "$TEMPLATE_RE" \
+      | grep -m1 -E "$SECRET_PATTERNS")"
+    [ -z "$HIT" ] && exit 0
+    ;;
+  *)
+    # Read, and Edit/Write/MultiEdit if the matcher was widened. Always absolute, per the docs.
+    TARGET="$(json_path file_path)"
+    # No readable target means no decision. Never guess: an unreadable payload that denied by
+    # default would block the whole session the first time the schema changes.
+    [ -z "$TARGET" ] && exit 0
+    is_secret "$TARGET" || exit 0
+    ;;
+esac
+
+hook_deny "Blocked: that path is a credential file (.env, *.pem/pfx/p12, id_rsa/id_ed25519, secrets.json, appsettings.Secrets.json, .ssh/, .aws/credentials). Use the committed .example/.sample/.template file instead, or ask the user for the value you need."

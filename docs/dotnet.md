@@ -39,21 +39,35 @@ no usa sus tipos en los controllers.
 ## 2. Target frameworks y lenguaje
 
 - **Target framework:** `net10.0` en los seis proyectos. Sin multi-targeting, sin discrepancias.
-- **Postura del lenguaje:** `<Nullable>enable</Nullable>` e `<ImplicitUsings>enable</ImplicitUsings>`
-  en todos los proyectos. `<LangVersion>` no se declara, así que aplica el default del SDK
-  (**C# 14** con .NET 10).
-- **SDK fijado / props de build compartidas:** no hay `Directory.Build.props` ni
-  `Directory.Build.targets`. `global.json` existe pero **no fija la versión del SDK** — solo
-  selecciona el runner de pruebas (ver §7). Basta con tener instalado un SDK de .NET 10; el build
-  no es estrictamente reproducible entre máquinas.
+- **Postura del lenguaje:** `<Nullable>enable</Nullable>`, `<ImplicitUsings>enable</ImplicitUsings>`
+  y `<LangVersion>latest</LangVersion>`, ahora centralizados en `Directory.Build.props` (los
+  proyectos siguen declarando los dos primeros por su cuenta; es redundante, no contradictorio).
+- **SDK fijado:** `global.json` fija `10.0.100` con `rollForward: latestFeature`. Cualquier SDK
+  10.0.x igual o superior sirve; uno de .NET 9 u 11 no. Se eligió la banda más baja de 10.0 a
+  propósito: fijar la versión instalada en una máquina deja fuera a quien tenga una banda anterior,
+  y un pin que estorba se borra.
+- **Props de build compartidas:** `Directory.Build.props` en la raíz aplica a los siete proyectos.
+  Ahí viven la postura del lenguaje, los analizadores, `TreatWarningsAsErrors`,
+  `EnforceCodeStyleInBuild`, la auditoría de NuGet y `RestorePackagesWithLockFile` (ver §8).
+  **No declara `<TargetFramework>`**: MSBuild importa ese archivo antes del cuerpo de cada
+  `.csproj`, así que un proyecto que declare el suyo lo pisa — y los siete lo declaran. Ponerlo ahí
+  sería una propiedad inerte que aparenta centralizar algo que no centraliza.
 - **Idioms de C# 14:** el repo **no** usa `field`, bloques `extension`, `?.=` ni operadores
   definidos por el usuario. Usa properties auto-implementadas y constructores explícitos.
   Sigue ese estilo; no "modernices" por modernizar.
 
 ## 3. Gestión de paquetes y dependencias
 
-- **Gestión de versiones:** **por proyecto**. No hay `Directory.Packages.props` ni gestión
-  centralizada, así que cada `<PackageReference>` **sí lleva** su atributo `Version`.
+- **Gestión de versiones:** **centralizada**. Todas las versiones viven en
+  `Directory.Packages.props` en la raíz, y un `<PackageReference>` **nunca lleva** atributo
+  `Version` — solo `Include`. Para subir un paquete se edita el `<PackageVersion>` de ese archivo.
+  `CentralPackageVersionOverrideEnabled` está en `false`: un proyecto no puede volver a su propia
+  versión con `VersionOverride` sin que la restauración falle con `NU1013` y lo nombre. Es
+  deliberado — la deriva silenciosa entre proyectos es exactamente lo que este archivo evita.
+- **Lockfiles:** cada proyecto tiene un `packages.lock.json` versionado, generado por
+  `RestorePackagesWithLockFile`. Congelan el árbol resuelto, transitivas incluidas. **Cambiar una
+  versión exige `dotnet restore` en el mismo commit**: CI restaura en modo bloqueado y falla con
+  `NU1004` si el lock y el proyecto no coinciden.
 - **Feeds:** no hay `nuget.config`; solo nuget.org.
 - **Herramientas locales:** no hay `.config/dotnet-tools.json`, así que `dotnet tool restore` no
   aplica y `dotnet ef` debe instalarse como herramienta global
@@ -76,7 +90,11 @@ no usa sus tipos en los controllers.
 - **Salud de dependencias:** dos paquetes (`SQLitePCLRaw.bundle_e_sqlite3` y `Microsoft.OpenApi`)
   existen **únicamente** para elevar versiones transitivas vulnerables; los `.csproj` lo dicen en
   comentarios. **No los elimines** por parecer no usados — quitarlos reintroduce el CVE.
-  No hay lockfile committeado ni `<NuGetAudit*>` configurado.
+  La auditoría de NuGet (`NuGetAudit`, nivel `low`, modo `all`) ya está activa en
+  `Directory.Build.props` y, con los warnings como errores, un aviso de vulnerabilidad **rompe la
+  compilación**. Eso incluye avisos publicados después del último commit: un build que estaba verde
+  puede ponerse rojo sin que nadie toque el repo. Es intencional. Para suavizarlo, subir
+  `NuGetAuditLevel` o pasar `NuGetAuditMode` a `direct`, dejando la razón escrita ahí mismo.
 
 ## 4. Composition root / DI
 
@@ -129,14 +147,13 @@ no usa sus tipos en los controllers.
 
 ## 7. Build, ejecución y pruebas
 
-```bash
-# desde src/
-dotnet restore
-dotnet build TheOffice.sln
-dotnet run --project Presentation/TheOffice.Api   # http://localhost:5226 · docs en /scalar
+Todo pasa por el `Makefile` en la raíz. La lista completa de objetivos está en
+[`AGENTS.md`](../AGENTS.md); `make help` la imprime.
 
-# desde la raíz del repo (global.json vive ahí)
-dotnet test src/TheOffice.sln
+```bash
+# desde la raíz del repo
+make check                                        # lint + build + test
+make run                                          # http://localhost:5226 · docs en /scalar
 
 # migraciones, desde src/ (requiere: dotnet tool install --global dotnet-ef)
 dotnet ef migrations add <Nombre> -p Infrastructure/TheOffice.Persistence -s Presentation/TheOffice.Api
@@ -145,7 +162,9 @@ dotnet ef database update -p Infrastructure/TheOffice.Persistence -s Presentatio
 
 - **Runner de pruebas:** **Microsoft.Testing.Platform**, seleccionado por `global.json` en la raíz
   del repo. Lo exige `xunit.v3.mtp-v2`. **No borres `global.json`** ni asumas argumentos de VSTest
-  (`--filter` de VSTest, `--logger trx`, etc.): MTP acepta otro juego de flags.
+  (`--filter` de VSTest, `--logger trx`, etc.): MTP acepta otro juego de flags. Para escribir un TRX,
+  este runner usa `--report-xunit-trx` — no `--logger trx` ni `--report-trx`, que rechaza. El
+  `Makefile` ya lo pasa.
 - **Framework de pruebas:** xUnit v3 (`xunit.v3.mtp-v2` 3.2.2). El proyecto es `<OutputType>Exe`,
   como exige MTP.
 - **Librerías de apoyo:** NSubstitute 6.0.0 para dobles. Las aserciones son las nativas de xUnit
@@ -155,21 +174,52 @@ dotnet ef database update -p Infrastructure/TheOffice.Persistence -s Presentatio
   el layout del código fuente (`Services/ProductServiceTests.cs`). Los nombres de prueba van en
   inglés, con el patrón `Method_Scenario_ExpectedResult` (los actuales siguen en español). Como los DTOs de respuesta son
   `record`, `Assert.Equal` compara objetos completos de forma estructural.
-- **Cobertura actual:** solo `ProductService` (11 métodos, 16 casos). `CategoryService` y `CustomerService`
-  no tienen pruebas.
+- **`tests/TheOffice.ArchitectureTests`** es la excepción: no prueba una capa sino la relación
+  entre todas. Usa ArchUnitNET 0.13.4 con la extensión `TngTech.ArchUnitNET.xUnitV3`, que es la que
+  corresponde a xUnit v3 sobre MTP. Nueve reglas, detalladas en §8. `make test` lo corre con el
+  resto; `make arch` lo corre solo.
+- **Cobertura actual:** `ProductService` (11 métodos, 16 casos) más 9 reglas de arquitectura — 25
+  pruebas en total. `CategoryService` y `CustomerService` siguen sin pruebas unitarias.
 
 ## 8. Puertas de calidad
 
-| Puerta | Estado | Notas |
-|---|---|---|
-| `.editorconfig` | **ausente** | La indentación de 2 espacios es convención de facto, no está reforzada. |
-| Analizadores Roslyn (StyleCop / NetAnalyzers) | **ausente** | Solo los analizadores implícitos del SDK. |
-| Arch-linting (NsDepCop / ArchUnitNET) | **ausente** | El layering de §1 no lo verifica nada: es disciplina humana. |
-| Warnings como errores | **ausente** | `<TreatWarningsAsErrors>` no está declarado en ningún proyecto. |
-| Formateador (`dotnet format` / CSharpier) | **ausente** | Sin configuración. |
+| Puerta | Estado | Implementada en | Notas |
+|---|---|---|---|
+| SDK fijado | **presente** | `global.json` | `10.0.100`, `rollForward: latestFeature`. Un SDK que no cumpla hace fallar cualquier comando `dotnet`. |
+| Versiones centralizadas + lockfiles | **presente** | `Directory.Packages.props`, `packages.lock.json` | Ver §3. CI restaura en modo bloqueado. |
+| Warnings como errores | **presente** | `Directory.Build.props` | Con `EnableNETAnalyzers` y `AnalysisLevel=latest`. Una sola excepción: `CS1591`, documentada en el archivo. |
+| `.editorconfig` | **presente** | `.editorconfig` | Indentación de 2 espacios (medida, no supuesta), orden de `using`, namespaces con ámbito de archivo, `_camelCase` en campos privados. `IDE0055` en `error`. |
+| Formateador (`dotnet format`) | **presente** | `Makefile` | `make lint` verifica, `make format` corrige. Corre también dentro del build vía `EnforceCodeStyleInBuild`. |
+| Arch-linting (ArchUnitNET) | **presente** | `tests/TheOffice.ArchitectureTests` | Nueve reglas; ver abajo. |
+| Auditoría de dependencias | **presente** | `Directory.Build.props` | `NuGetAudit` nivel `low`, modo `all`. Rompe el build. `make audit` además lista lo vulnerable sin fallar. |
+| Escaneo de secretos | **presente** | `lefthook.yml`, `.github/workflows/ci.yml` | `gitleaks protect` en cada commit, `gitleaks detect` sobre la historia en CI. |
+| Hooks de Git | **presente** | `lefthook.yml` | `make hooks` los instala. Formato y secretos en `pre-commit`, formato del mensaje en `commit-msg`, `make check` en `pre-push`. |
+| Integración continua | **presente** | `.github/workflows/ci.yml` | Corre `make ci`. Ver [infraestructura](./infrastructure.md). |
 
-Recomendado: adoptar un `.editorconfig` que fije la indentación de 2 espacios, y una regla de
-arch-linting que impida que `TheOffice.Domain` referencie cualquier otra capa.
+### Reglas de arquitectura verificadas
+
+Todas pasaban contra el código en el momento de escribirlas — una regla que el repo ya viola es
+una conversación, no una prueba.
+
+En `LayerDependencyTests`:
+
+1. `Domain` no depende de ninguna otra capa.
+2. `Application` no depende de `Persistence`, `Adapters` ni `Api`.
+3. `Application` no depende de EF Core.
+4. `Domain` no depende de EF Core.
+5. `Persistence` y `Adapters` no dependen entre sí.
+6. Nadie depende de `Api` — es el punto de entrada, y por tanto una hoja del grafo.
+
+En `ConventionTests`:
+
+7. Las interfaces terminadas en `Repository` viven en `TheOffice.Application.Interfaces`.
+8. Las interfaces terminadas en `Adapter` viven en `TheOffice.Application.Interfaces`.
+9. Solo `Adapters` escribe a la consola.
+
+Reglas **no** escritas, por no ser verificables con esta herramienta: "los controllers no
+contienen lógica de negocio", "no se lanzan excepciones para control de flujo" y "las rutas
+exponen `PublicId`, nunca el `Id` interno". Las tres siguen siendo disciplina y revisión humana;
+están en [`AGENTS.md`](../AGENTS.md) y en [arquitectura](./architecture.md).
 
 ## 9. Superficie de API
 
@@ -250,7 +300,19 @@ Prácticamente ausentes, y conviene no asumir lo contrario:
 - **`GlobalConstants.TheOfficeDbContext` está sin usar** — cero referencias en el repo. No asumas
   que cablea algo.
 - **`ConsoleNotificationAdapter` es un stub**: hace `Console.WriteLine` dentro de un `Task.Run`.
-  No hay notificaciones reales.
+  No hay notificaciones reales. La regla de arquitectura "solo `Adapters` escribe a la consola"
+  depende de que siga siendo el único: si se agrega otro adaptador que escriba a consola, seguirá
+  pasando; si alguien escribe a consola desde otra capa, `make test` se pone rojo.
+- **`GenerateDocumentationFile` está activo, y `CS1591` silenciado.** La propiedad no está para
+  publicar documentación de API: hace falta para que `IDE0005` (usings innecesarios) se reporte en
+  un build de línea de comandos. El efecto colateral es que Roslyn exige comentarios XML en cada
+  tipo público, lo que aquí no aporta nada — de ahí el `NoWarn`, con su razón escrita en
+  `Directory.Build.props`. Revisar si algún proyecto llega a empaquetarse como librería NuGet.
+- **En `.editorconfig`, el orden de las secciones es semántico.** El archivo no tiene más alcance
+  que el último encabezado leído, así que una regla de C# escrita después de
+  `[**/Migrations/*.cs]` aplica solo a los archivos generados — que además están excluidos por
+  `generated_code = true`. Queda inerte y **nada lo reporta**. Todas las reglas de C# van en
+  `[*.{cs,csx}]`, y las secciones angostas al final del archivo.
 
 ## Docs relacionados
 

@@ -64,16 +64,45 @@ Lo disponible hoy en `src/`: una API REST versionada sobre .NET 10, con arquitec
 
 ## 🏁 Comenzando
 
-1. Navega a la carpeta `src`.
-2. Restaura las dependencias:
+### Requisitos
+
+Además del SDK de .NET 10, el repo usa tres herramientas para sus comprobaciones automáticas.
+`make` **no viene con Windows**: hay que instalarlo.
+
+| Herramienta | macOS | Windows | Linux |
+|---|---|---|---|
+| SDK de .NET 10 | [descarga](https://dotnet.microsoft.com/download) | [descarga](https://dotnet.microsoft.com/download) | [descarga](https://dotnet.microsoft.com/download) |
+| `make` | viene con las Xcode Command Line Tools | `winget install ezwinports.make` | viene con la distribución |
+| Lefthook | `brew install lefthook` | `winget install evilmartians.lefthook` | `go install github.com/evilmartians/lefthook@latest` |
+| gitleaks | `brew install gitleaks` | `winget install gitleaks` | `apt install gitleaks` en Debian trixie+ / Ubuntu 25.04+; en LTS más viejas, el binario de [releases](https://github.com/gitleaks/gitleaks/releases) |
+| Git Bash | viene con el sistema | **viene con [Git para Windows](https://gitforwindows.org/)** | viene con la distribución |
+| Node / `npx` | `brew install node` | `winget install OpenJS.NodeJS` | el paquete de la distribución |
+
+Las dos últimas filas son para el instrumental del agente de IA, no para compilar el proyecto.
+**Git Bash importa en Windows**: los scripts de `scripts/agent-hooks/` son bash, y si Git Bash no
+está, Claude Code cae a PowerShell y los hooks **dejan de hacer nada, en silencio**. Node solo
+hace falta para el servidor MCP de base de datos, que se lanza con `npx`.
+
+### Puesta en marcha
+
+Desde la raíz del repositorio:
+
+1. Instala los git hooks (una sola vez):
    ```bash
-   dotnet restore
+   make hooks
    ```
-3. Ejecuta el backend:
+2. Ejecuta el backend:
    ```bash
-   dotnet run --project Presentation/TheOffice.Api
+   make run
    ```
-4. La API queda en `http://localhost:5226` y la documentación interactiva en `http://localhost:5226/scalar`.
+3. La API queda en `http://localhost:5226` y la documentación interactiva en `http://localhost:5226/scalar`.
+4. Comprueba que todo está en orden:
+   ```bash
+   make check
+   ```
+
+`make check` corre estilo, compilación y pruebas — es la misma comprobación que ejecuta la
+integración continua. `make help` lista el resto de objetivos.
 
 No hace falta preparar la base de datos: en `Development` la aplicación aplica las migraciones al arrancar y siembra el catálogo. El archivo `theoffice.db` se crea local y está ignorado por Git.
 
@@ -83,6 +112,54 @@ Para trabajar las migraciones a mano:
 dotnet ef migrations add <Nombre> -p Infrastructure/TheOffice.Persistence -s Presentation/TheOffice.Api
 dotnet ef database update -p Infrastructure/TheOffice.Persistence -s Presentation/TheOffice.Api
 ```
+
+### Instrumental del agente de IA
+
+El repositorio trae dos hooks y dos servidores MCP. Qué hace cada uno está en
+[`AGENTS.md`](./AGENTS.md); aquí está cómo ponerlos a funcionar.
+
+**Los hooks son de Claude Code.** Los scripts de `scripts/agent-hooks/` son shell portable, pero
+el registro vive en `.claude/settings.json` y hoy no lo lee ningún otro agente: en Codex, Cursor o
+Copilot **no corren**. Tampoco son una frontera de seguridad — corren con tu shell y tus permisos,
+y leen el comando, no la intención: un nombre que el comando arma en tiempo de ejecución
+(`cat "$SECRET_FILE"`) les pasa por debajo.
+
+El guardia de secretos distingue **un archivo que se abre de un nombre que solo se menciona**.
+Bloquea `cat .env`, y deja pasar un `echo`, un mensaje de commit o un heredoc que hablen del
+archivo. Si te bloquea algo que no abre nada, es un bug: repórtalo, no lo esquives.
+
+**Variables de entorno.** Ninguna se versiona; el archivo `.mcp.json` solo guarda su nombre.
+
+| Variable | Qué es | De dónde sale |
+|---|---|---|
+| `APP_DSN` | Cadena de conexión que lee el servidor MCP de base de datos | La ruta **absoluta** al SQLite local. SQLite rechaza una ruta relativa, y una ruta absoluta es específica de tu máquina — por eso no puede ir en el archivo compartido |
+
+```bash
+export APP_DSN="sqlite://$(pwd)/src/Presentation/TheOffice.Api/theoffice.db"
+```
+
+**Activar los servidores MCP.** Escribir `.mcp.json` no los conecta: quedan en
+`⏸ Pending approval` hasta que confíes en el espacio de trabajo, y un repositorio recién clonado
+**no puede aprobar sus propios servidores**. Ejecuta `claude` en la raíz del repo, acepta el
+diálogo de confianza, y comprueba con `/mcp`.
+
+Si tu editor subraya `${APP_DSN}` en `.mcp.json` con `Variable APP_DSN not found`, es un falso
+positivo: VS Code lo lee como una variable suya. El archivo está bien y el aviso desaparece cuando
+exportas la variable.
+
+### Pruébalo
+
+Nada de esto se ve hasta que hace algo, y un hook que nunca dispara se parece demasiado a uno que
+funciona en silencio. Una línea por cada cosa instalada:
+
+| Instalado | Pide al agente / ejecuta | Deberías ver |
+|---|---|---|
+| Guardia de secretos | «lee `.env`» (créalo antes) | Un rechazo que nombra los archivos de credenciales y apunta al `.example` |
+| …y que no se pase de listo | «haz `echo "nota sobre .env"`» | Que corra. Mencionar el nombre no es abrirlo |
+| Formateo automático | Pide agregar un método a un `.cs` con indentación descuidada | El archivo vuelve formateado y `make lint` sigue pasando |
+| Servidores MCP | `/mcp` | Conectados, no `⏸ Pending approval` |
+| `mslearn` | «¿qué hace `dotnet list package --vulnerable`, según la documentación oficial?» | Una respuesta que cita learn.microsoft.com |
+| `dbhub` | «¿cuántas filas tiene cada tabla?» | Conteos reales de `theoffice.db` (requiere `APP_DSN`) |
 
 ## 📡 Endpoints
 

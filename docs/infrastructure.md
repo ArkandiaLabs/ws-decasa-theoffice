@@ -7,8 +7,12 @@
 
 ### Prerrequisitos
 
-- **.NET SDK 10.** `global.json` **no** fija la versión del SDK, solo el runner de pruebas, así
-  que cualquier SDK 10 instalado sirve.
+- **.NET SDK 10.** `global.json` **sí** fija la versión: `10.0.100` con
+  `rollForward: latestFeature`, así que cualquier SDK 10.0.x igual o superior sirve, pero uno de
+  .NET 9 u 11 no. También selecciona el runner de pruebas (Microsoft.Testing.Platform).
+- **`make`, Lefthook y gitleaks**, para las comprobaciones automáticas. Los comandos de
+  instalación por sistema operativo están en el [`README.md`](../README.md). `make` no viene con
+  Windows.
 - **`dotnet-ef` como herramienta global**, únicamente si vas a trabajar migraciones a mano:
   ```bash
   dotnet tool install --global dotnet-ef
@@ -57,6 +61,37 @@ Cors__AllowedOrigins__0="https://tienda.ejemplo.com"
 `AllowAnyOrigin()`. Es cómodo en local, pero desplegar así deja la API abierta a cualquier origen:
 al desplegar, poblá el arreglo.
 
+### Servidores MCP
+
+`.mcp.json`, en la raíz, está versionado a propósito: el alcance de proyecto es lo que hace que un
+servidor llegue al equipo entero en vez de vivir en el `~/.claude.json` de una persona. Ninguna
+credencial se escribe ahí — solo referencias `${VAR}`.
+
+| Servidor | Transporte | Autenticación | Alcanza |
+|---|---|---|---|
+| `mslearn` | HTTP (`https://learn.microsoft.com/api/mcp`) | ninguna | Documentación oficial de .NET, EF Core y Azure |
+| `dbhub` | stdio, `npx -y @bytebase/dbhub@1.2.1` | `${APP_DSN}` | Esquema y datos de la base que apunte el DSN |
+
+**La versión de `dbhub` está fijada a propósito.** `.mcp.json` se lee al iniciar cada sesión, así
+que una entrada sin fijar ejecutaría lo que npm haya publicado desde entonces, con los permisos
+del usuario y sin que nada en el historial diga que el código cambió. Fijarla convierte la subida
+en una línea revisable del diff. Al subirla, **vuelve a comprobar los flags** contra la versión
+nueva: `npx -y @bytebase/dbhub@<versión> --help < /dev/null` (la redirección de stdin es
+obligatoria; sin ella el servidor se queda esperando un handshake que nunca llega).
+
+**Un agente con conexión a la base lee lo que el DSN apunte.** Hoy `APP_DSN` apunta al SQLite
+local; apuntarlo a producción es una decisión, no un accidente de configuración.
+
+### Hooks del agente — solo local
+
+Los hooks de `scripts/agent-hooks/`, registrados en `.claude/settings.json`, corren **en la máquina
+del desarrollador y en ningún otro lado**. La integración continua no ejecuta ninguno: `make ci` no
+los conoce. La asimetría es deliberada — son sensores en el momento de escribir, no compuertas de
+merge — pero conviene tenerla presente antes de asumir que algo está cubierto en el pipeline.
+
+Tampoco hay pruebas automáticas del guardia: su comportamiento se comprueba a mano, disparándolo.
+Un cambio en `secret-read-guard.sh` no tiene más red que quien lo revisa.
+
 ## Producción
 
 ### Objetivo de despliegue
@@ -87,13 +122,33 @@ configurados (`<UserSecretsId>` no está declarado en ningún proyecto).
 
 ### CI/CD
 
-- **Herramienta:** ninguna. No hay `.github/workflows/`, `Jenkinsfile`, `azure-pipelines.yml` ni
-  `.gitlab-ci.yml`.
-- **Intención:** que CI despliegue al hacer merge a `main`. **Todavía no está implementado.**
-- **Hoy:** el flujo es local — `dotnet build` y `dotnet test` a mano, y PRs hacia `main` revisados
-  por el equipo de Arkandia (no hay `CODEOWNERS`).
+- **Herramienta:** GitHub Actions. El workflow vive en `.github/workflows/ci.yml`.
+- **Alcance:** solo compuertas de calidad. **No despliega** — no hay destino de despliegue
+  definido todavía (ver [objetivo de despliegue](#objetivo-de-despliegue)).
+- **Disparador:** cada push de cada rama, más los pull requests desde forks. Un segundo push a la
+  misma rama cancela el anterior en vez de encolarse. Un PR interno no dispara el pipeline dos
+  veces.
+- **Runner:** `ubuntu-latest`, que ya trae `make`.
+- **Pasos, en orden:**
+  1. `checkout` con historia completa — gitleaks escanea commits, no solo el árbol.
+  2. Instalar gitleaks desde su release, en una versión fijada y verificada contra el
+     `checksums.txt` publicado. Se sube como cualquier otra dependencia, no se resuelve sola en
+     cada corrida.
+  3. Instalar el SDK **desde `global.json`**, no desde una versión escrita en el workflow.
+  4. Caché de paquetes NuGet, con clave sobre los `packages.lock.json`.
+  5. `make ci` — restauración en modo bloqueado, estilo, compilación, pruebas y escaneo de
+     secretos. El workflow **no repite los pasos**: si alguien agrega una comprobación al
+     `Makefile`, CI la hereda.
+  6. Publicar los `.trx` de las pruebas como artefacto.
+- **Lo que falta para que sea una compuerta:** el pipeline hoy **reporta**, no bloquea. Hay que
+  exigir el status check `check` en la protección de rama de `main`
+  (Settings → Branches). Mientras tanto, un PR en rojo se puede mergear.
+- **Asimetría local/CI:** `make check` (local, y lo que corre el hook de `pre-push`) no incluye el
+  escaneo de secretos ni la restauración en modo bloqueado; `make ci` sí. En sentido contrario, el
+  escaneo de secretos de cada commit lo hace el hook de `pre-commit` con `gitleaks protect`, que en
+  CI no existe porque ahí ya es historia.
 
-<!-- TODO: documentar el pipeline cuando exista, incluyendo dónde se aplican las migraciones. -->
+<!-- TODO: documentar el pipeline de despliegue cuando exista, incluyendo dónde se aplican las migraciones. -->
 
 ## Observabilidad
 

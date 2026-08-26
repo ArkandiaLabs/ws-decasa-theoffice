@@ -1,0 +1,129 @@
+# Written to `.github/workflows/ci.yml`.
+#
+# Placeholders — the current MAJOR tag of each action. Resolve them; never copy a version from
+# this file. Marketplace actions move faster than anything else in the pipeline, and a stale major
+# is how a workflow ends up running on a deprecated Node runtime.
+#
+#   {{CHECKOUT_MAJOR}}    {{SETUP_DOTNET_MAJOR}}    {{CACHE_MAJOR}}    {{UPLOAD_ARTIFACT_MAJOR}}
+#
+#   for a in actions/checkout actions/setup-dotnet actions/cache actions/upload-artifact; do
+#     printf '%s %s\n' "$a" "$(gh api repos/$a/releases/latest --jq .tag_name | cut -d. -f1)"
+#   done
+#
+# Report the resolved majors the same way you report resolved package versions. If the org
+# requires actions pinned to a commit SHA, resolve the SHA for that major instead and add the
+# version as a trailing comment.
+#
+# Every other value comes from global.json and the Makefile.
+#
+# Two lines carry the whole design:
+#   global-json-file  the runner installs the SDK the repo pins. Same version everywhere.
+#   make ci           one definition of "the code is fine". Restating the steps here guarantees
+#                     drift the first time someone adds a check to the Makefile.
+#
+# `make ci` restores with --locked-mode, so the committed packages.lock.json files must be in
+# sync with the projects. A drifted lock file fails the build — that is the point.
+#
+# ubuntu-latest ships with make. On windows-latest it has to be installed first.
+# Delete this header before writing the file.
+
+name: CI
+
+on:
+  # Every branch, every push. A gate that only runs on main tells you about the breakage after
+  # it is already shared; on a feature branch it tells the person who wrote it, while they are
+  # still holding the context.
+  push:
+  # Adds pull requests opened from forks, whose commits never triggered the push event above.
+  pull_request:
+
+# One run per branch. A second push cancels the first instead of queueing behind it — otherwise
+# running on every branch multiplies both wait time and billed minutes.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    # Without this, every pull request inside this repository runs twice: once for the push to
+    # its branch and once for the pull_request event. Fork PRs still run, because their push
+    # never reached this repository.
+    if: >-
+      github.event_name == 'push' ||
+      github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+
+    steps:
+      # gitleaks scans history, so it needs the full clone.
+      # Drop fetch-depth if secret scanning was skipped.
+      - uses: actions/checkout@{{CHECKOUT_MAJOR}}
+        with:
+          fetch-depth: 0
+
+      # Puts the binary on PATH so `make ci` can run the single scan the Makefile defines.
+      # Deliberately NOT gitleaks/gitleaks-action: that action runs its own scan instead of
+      # exposing the binary, and it requires a licence key for organisation-owned repos.
+      # Drop this step if secret scanning was skipped.
+      #
+      # {{GITLEAKS_VERSION}} is RESOLVED AT INSTALL TIME, not written by hand:
+      #   gh release view --repo gitleaks/gitleaks --json tagName --jq '.tagName' | tr -d v
+      # This is what "never hardcode a version" means here — resolve it from the source of truth
+      # when the file is written, then pin it. It does NOT mean re-resolving on every CI run: a
+      # pipeline that fetches "latest" runs a different binary tomorrow than it ran today, with
+      # nothing recording the change, and a compromised or simply broken release lands straight in
+      # the gate that is supposed to catch problems. Bump it the way you bump any dependency.
+      - name: Install gitleaks
+        env:
+          GITLEAKS_VERSION: "{{GITLEAKS_VERSION}}"
+        run: |
+          set -euo pipefail
+          BASE="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}"
+          ARCHIVE="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          cd "$(mktemp -d)"
+          curl -fsSL -o "$ARCHIVE" "$BASE/$ARCHIVE"
+          curl -fsSL -o checksums.txt "$BASE/gitleaks_${GITLEAKS_VERSION}_checksums.txt"
+          # Verify before extracting. Without this the pin only says which URL was fetched, not
+          # what came back from it. The published checksums file lists every asset, so select the
+          # one line for this archive and let sha256sum do the comparison.
+          grep " ${ARCHIVE}\$" checksums.txt | sha256sum -c -
+          # No sudo: a writable directory on PATH is enough, and a CI step that escalates to
+          # install a linter is a habit worth not forming.
+          mkdir -p "$HOME/.local/bin"
+          tar -xzf "$ARCHIVE" -C "$HOME/.local/bin" gitleaks
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/gitleaks" version
+
+      - name: Install .NET SDK from global.json
+        uses: actions/setup-dotnet@{{SETUP_DOTNET_MAJOR}}
+        with:
+          global-json-file: global.json
+
+      - name: Cache NuGet packages
+        uses: actions/cache@{{CACHE_MAJOR}}
+        with:
+          path: ~/.nuget/packages
+          # With lock files, packages.lock.json IS the resolved graph — hashing every .csproj on
+          # top of it only busts the cache on edits that cannot change what gets restored.
+          # Add '**/*.csproj' back only if the repo opted out of lock files.
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/packages.lock.json', '**/Directory.Packages.props') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Run the same gates as local
+        run: make ci
+
+      # Only useful if `make test` actually writes a .trx — see TEST_LOGGER in the Makefile.
+      # Delete this step when the Makefile has no logger configured, rather than leaving a step
+      # that silently uploads nothing.
+      - name: Publish test results
+        if: always()
+        uses: actions/upload-artifact@{{UPLOAD_ARTIFACT_MAJOR}}
+        with:
+          name: test-results
+          path: "**/TestResults/**"
+          if-no-files-found: ignore
+
+# Branch protection is what turns this from a report into a gate:
+# Settings > Branches > require the `check` status check before merging.
+#
+# Do NOT add paths-ignore to skip docs-only commits once `check` is a required status check: the
+# skipped run never reports, and the pull request waits for a check that will never arrive.

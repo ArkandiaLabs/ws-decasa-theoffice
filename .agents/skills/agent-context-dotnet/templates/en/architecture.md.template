@@ -1,0 +1,72 @@
+<!--
+Placeholders:
+  {{PROJECT_NAME}}
+  {{STACK_SUMMARY}}         — e.g. "ASP.NET Core 10 + SQL Server + EF Core 10, deployed to Azure Container Apps"
+  {{DETECTED_LANGUAGES}}    — primary languages inferred from Phase 1 (C#, F#, plus any frontend language)
+  {{DETECTED_FRAMEWORK}}    — primary framework (ASP.NET Core, Blazor, MAUI, Worker Service...)
+  {{DETECTED_PERSISTENCE}}  — DB + provider + migration tool (SQL Server + EF Core, PostgreSQL + Npgsql + EF Core...)
+  {{DETECTED_DEPLOYMENT}}   — Azure App Service, Container Apps / AKS, IIS on VM, container image, etc.
+-->
+
+# Architecture
+
+## Summary
+
+{{STACK_SUMMARY}}
+
+## Quality attributes
+
+| Attribute | Priority | Rationale |
+|---|---|---|
+| <!-- e.g. Simplicity --> | <!-- High/Medium/Low --> | <!-- Why this matters here --> |
+| Deployability | | |
+| Modifiability | | |
+| Reliability | | |
+| Performance | | |
+| Security | | |
+
+Delete rows that don't apply. Keep the ones that drive real trade-offs.
+
+## Tech stack
+
+- **Languages:** {{DETECTED_LANGUAGES}}
+- **Framework(s):** {{DETECTED_FRAMEWORK}}
+- **Persistence:** {{DETECTED_PERSISTENCE}}
+- **Deployment:** {{DETECTED_DEPLOYMENT}}
+- **CI/CD:** <!-- TODO: confirm the CI tool detected in .github/workflows, Jenkinsfile, etc. -->
+
+## Pattern
+
+<!-- TODO: describe the top-level pattern (layered / hexagonal / microservices / modular monolith) in 1-2 paragraphs. Include a folder-layout snippet so agents know where code lives. -->
+
+```
+<project-root>/
+├── <main source folder>/
+├── <test folder>/
+└── <config>
+```
+
+## Component diagram
+
+<!-- TODO: paste or draw a simple C4 context + container diagram. Mermaid suggested:
+
+```mermaid
+flowchart LR
+  user[User] -->|HTTPS| app[{{PROJECT_NAME}}]
+  app -->|SQL| db[(Database)]
+```
+
+-->
+
+## Key rules (enforced by architecture, not lint)
+
+<!-- TODO: list architectural invariants. Example:
+- Domain layer must not import infrastructure. Rationale: ADR-001.
+- All write paths must validate tenant scoping. Rationale: ADR-002.
+-->
+
+## Related docs
+
+- [Decisions](./adrs/) — why the architecture looks this way.
+- [Data model](./data-model.md) — schema + relationships.
+- [Infrastructure](./infrastructure.md) — deployment topology.

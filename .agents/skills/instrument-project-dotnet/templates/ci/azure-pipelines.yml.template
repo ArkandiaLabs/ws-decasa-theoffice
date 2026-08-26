@@ -1,0 +1,105 @@
+# Written to `.azdevops/azure-pipelines.yml`, or the repo's existing pipeline path.
+# No placeholders — every value comes from global.json and the Makefile.
+#
+# Two lines carry the whole design:
+#   useGlobalJson  the agent installs the SDK the repo pins. Same version everywhere.
+#   make ci        one definition of "the code is fine". Restating the steps here guarantees
+#                  drift the first time someone adds a check to the Makefile.
+#
+# `make ci` restores with --locked-mode and runs gitleaks: the agent needs both `make` and
+# `gitleaks` on PATH. Microsoft-hosted Linux agents ship make; gitleaks is installed below.
+# Self-hosted agents usually have neither — check before assuming.
+#
+# `pool` depends on the org: `vmImage: ubuntu-latest` for Microsoft-hosted agents (needs a
+# parallelism grant), or `name: Default` for a self-hosted pool. Ask if the repo does not
+# already say.
+# Delete this header before writing the file.
+
+# Every branch, every push. A gate that only runs on main tells you about the breakage after it
+# is already shared; on a feature branch it tells the person who wrote it, while they still have
+# the context. Exclude noisy prefixes here if the team uses them, e.g. exclude: [users/*/wip/*].
+trigger:
+  branches:
+    include:
+      - '*'
+
+# There is deliberately no `pr:` block. For an Azure Repos Git repository the PR trigger CANNOT be
+# configured in YAML — Azure DevOps implements it through the target branch's Build validation
+# policy instead, and a `pr:` block here is silently ignored. Add `pr:` only if this pipeline is
+# attached to a GitHub repository.
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  # Resolved at install time from the gitleaks releases API; see the Install gitleaks step.
+  GITLEAKS_VERSION: "{{GITLEAKS_VERSION}}"
+  # Cache@2 needs a real path. Azure DevOps does not predefine NUGET_PACKAGES, and NuGet reads
+  # this variable to decide where the global packages folder lives — so the cache and the
+  # restore point at the same directory. Without it the cache step silently caches nothing.
+  NUGET_PACKAGES: $(Pipeline.Workspace)/.nuget/packages
+
+steps:
+  # gitleaks scans history, so it needs the full clone.
+  # Drop fetchDepth if secret scanning was skipped.
+  - checkout: self
+    fetchDepth: 0
+
+  # Puts the binary on PATH so `make ci` can run the single scan the Makefile defines.
+  # Drop this step if secret scanning was skipped.
+  #
+  # {{GITLEAKS_VERSION}} is RESOLVED AT INSTALL TIME, not written by hand:
+  #   gh release view --repo gitleaks/gitleaks --json tagName --jq '.tagName' | tr -d v
+  # Pinning it is not a contradiction of "never hardcode a version" — that rule is about resolving
+  # from the source of truth when the file is written. Re-resolving on every run means the gate
+  # runs a different binary tomorrow than today, unrecorded. Bump it like any dependency.
+  - script: |
+      set -euo pipefail
+      BASE="https://github.com/gitleaks/gitleaks/releases/download/v$(GITLEAKS_VERSION)"
+      ARCHIVE="gitleaks_$(GITLEAKS_VERSION)_linux_x64.tar.gz"
+      cd "$(mktemp -d)"
+      curl -fsSL -o "$ARCHIVE" "$BASE/$ARCHIVE"
+      curl -fsSL -o checksums.txt "$BASE/gitleaks_$(GITLEAKS_VERSION)_checksums.txt"
+      # Verify before extracting: the pin says which URL was fetched, the checksum says what came
+      # back from it.
+      grep " ${ARCHIVE}\$" checksums.txt | sha256sum -c -
+      # No sudo, and prependpath puts it on PATH for every later step in the job.
+      mkdir -p "$HOME/.local/bin"
+      tar -xzf "$ARCHIVE" -C "$HOME/.local/bin" gitleaks
+      echo "##vso[task.prependpath]$HOME/.local/bin"
+      "$HOME/.local/bin/gitleaks" version
+    displayName: "Install gitleaks"
+
+  - task: UseDotNet@2
+    displayName: "Install .NET SDK from global.json"
+    inputs:
+      useGlobalJson: true
+
+  - task: Cache@2
+    displayName: "Cache NuGet packages"
+    inputs:
+      # With lock files, packages.lock.json IS the resolved graph; hashing every .csproj on top
+      # only busts the cache on edits that cannot change what gets restored.
+      key: 'nuget | "$(Agent.OS)" | **/packages.lock.json, **/Directory.Packages.props'
+      restoreKeys: 'nuget | "$(Agent.OS)"'
+      path: $(NUGET_PACKAGES)
+
+  - script: make ci
+    displayName: "Run the same gates as local"
+
+  # Only useful if `make test` actually writes a .trx — see TEST_LOGGER in the Makefile.
+  # Delete this task when the Makefile has no logger configured.
+  - task: PublishTestResults@2
+    displayName: "Publish test results"
+    condition: always()
+    inputs:
+      testResultsFormat: VSTest
+      testResultsFiles: "**/*.trx"
+      failTaskOnMissingResultsFile: false
+
+# THIS FILE ON ITS OWN DOES NOTHING. Unlike GitHub Actions, Azure DevOps does not discover YAML
+# in the repository. Two manual steps, both in the web UI, both the user's to do:
+#   1. Pipelines > New pipeline > Azure Repos Git > Existing Azure Pipelines YAML file > this path.
+#   2. Repos > Branches > main > Branch policies > Build validation > add the pipeline.
+# Step 1 makes it run; step 2 makes it a gate. Report control 8 as written but not yet active
+# until both are done.
