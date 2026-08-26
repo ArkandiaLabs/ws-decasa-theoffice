@@ -231,7 +231,7 @@ does not degrade — the server exits and the whole entry is dead.
 
 ## Before you finish
 
-- Confirm the file parses: `python3 -c "import json;json.load(open('.mcp.json'))"`.
+- Confirm the file parses: `node -e "JSON.parse(require('fs').readFileSync('.mcp.json'))"`.
 - **Confirm every stdio server actually starts**, with the DSN or token the README will tell the
   user to export, and with `< /dev/null` so it exits instead of hanging:
 

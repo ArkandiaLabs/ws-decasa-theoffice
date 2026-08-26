@@ -44,10 +44,11 @@ a link. **Does it already exist in the repo?** Link to that, even if the wording
 | `docs/claims-ledger.md` | New verifiable claims | Medium |
 | `.gitignore` | `logs/` — and this one is written in Phase 4, not here | If hook 5 |
 
-**Write all of it with `Edit` and `Write`, never a Bash heredoc.** These documents describe what
-the secret guard blocks, so they contain `.env`, `id_rsa` and `secrets.json`. The guard tokenises
-Bash commands and cannot tell a path from a mention of one, so a `cat <<EOF > AGENTS.md` carrying
-that paragraph is denied. `Edit` and `Write` are outside its matcher, deliberately.
+**Write all of it with `Edit` and `Write`.** These documents describe what the secret guard
+blocks, so they contain `.env`, `id_rsa` and `secrets.json`. The guard skips heredoc bodies and
+the operands of an `echo`, so that prose is no longer denied — but it still checks what a
+redirection opens and every operand that names a credential. `Edit` and `Write` are outside its
+matcher entirely, deliberately: they do not depend on the tokeniser being right.
 
 ---
 
