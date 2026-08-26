@@ -321,7 +321,7 @@ Then confirm the file still parses. A malformed `settings.json` does not fail lo
 the hooks:
 
 ```bash
-python3 -c "import json;json.load(open('.claude/settings.json'));print('settings.json parses')"
+node -e "JSON.parse(require('fs').readFileSync('.claude/settings.json'));console.log('settings.json parses')"
 ```
 
 ### Rules for this phase
@@ -366,8 +366,9 @@ restore the `.csproj`, and finish with `git status` showing exactly what it show
 
 **Three traps specific to this skill, all from hook 1.** Reading the probe is denied *to you* —
 that is the proof, not an obstacle, so do not disable the hook to get past it. **Creating and
-deleting it are also denied**, because the guard tokenises Bash commands and cannot tell a path
-from a mention of one: `rm -f .env.hooktest` is refused, and so is `git check-ignore` on it. And
+deleting it are also denied**, because those commands take the probe as an operand and an operand
+that names a credential file is exactly what the guard blocks: `rm -f .env.hooktest` is refused,
+and so is `git check-ignore` on it. That one is the guard working, not a false positive. And
 the probe is a credential-shaped file in a repo that may have no `.env` entry in `.gitignore` at
 all. `verification.md` has the five-step recipe that handles all three — a throwaway directory,
 gitignored first and removed whole. Follow it literally rather than improvising mid-phase.
@@ -381,13 +382,12 @@ gitignored first and removed whole. Follow it literally rather than improvising 
 Follow `references/documentation.md`. **Update what exists; do not create the doc pack** — that is
 `/arkandia:agent-context-dotnet`'s job. If a document is missing, report the gap and point there.
 
-**Write this prose with Edit and Write, never with a shell heredoc.** This phase documents what the
-secret guard blocks, so the text you are writing contains the strings `.env`, `id_rsa`,
-`secrets.json`. The guard's matcher is `Bash|PowerShell|Read`: it tokenises a Bash command and
-cannot tell a path from a mention of one, so a `cat <<EOF > AGENTS.md` carrying that paragraph is
-denied. Through `Edit` and `Write` it is not — those tools are outside the matcher, deliberately.
-This is a guaranteed collision between two mandatory phases of this skill, so it is called out
-here rather than left to be discovered.
+**Write this prose with Edit and Write.** This phase documents what the secret guard blocks, so
+the text you are writing contains the strings `.env`, `id_rsa`, `secrets.json`. The guard skips a
+heredoc body and the operands of an `echo`, so prose that merely names those files is no longer
+denied — but the file a redirection opens is still checked, and so is every operand that names a
+credential. `Edit` and `Write` are outside the matcher entirely, deliberately: they do not depend
+on the tokeniser being right.
 
 Required, in order:
 
@@ -458,10 +458,10 @@ Do not commit. Leave the changes for the user to review.
 | Symptom | Almost always | Confirm with |
 |---|---|---|
 | A guard never fires, and never errors | `set -o pipefail` in the script. A filter that short-circuits (`grep -q`, `head -1`) raises SIGPIPE, the pipeline reports failure, and the guard falls through to allow — silently | Remove `pipefail`; the scripts use `set -u` alone for exactly this reason |
-| A guard fires on things it should not | The pattern is matched against the whole stdin payload instead of a field. `.env` appears in `git status` output and in `.gitignore` | Match `tool_input.file_path`, or tokenize `tool_input.command` |
+| A guard fires on things it should not | The pattern is matched against the whole stdin payload instead of a field — or against every word of `tool_input.command`, which denies prose: a commit message, a PR body, an `echo` that names the file | Match `tool_input.file_path`. For Bash, tokenise `tool_input.command` **and drop what nothing opens** — `echo`/`printf` operands, heredoc bodies, the value of `-m`/`--body`/`--title`, a `grep` pattern. `secret-read-guard.sh` is the worked example |
 | A path check never matches on Windows | `tool_input.file_path` arrives with backslashes, even under Git Bash | `json_path` in `_lib.sh` normalises them; use it instead of `json_raw` for anything path-shaped |
 | Hooks do nothing at all on Windows | Git Bash is absent, so Claude Code fell back to PowerShell and the `.sh` never ran | `bash --version` in the user's shell |
-| `settings.json` edits appear to be ignored | The file no longer parses. Malformed JSON drops the hooks rather than reporting an error | `python3 -c "import json;json.load(open('.claude/settings.json'))"` |
+| `settings.json` edits appear to be ignored | The file no longer parses. Malformed JSON drops the hooks rather than reporting an error | `node -e "JSON.parse(require('fs').readFileSync('.claude/settings.json'))"` |
 | An MCP server stays at `⏸ Pending approval` | The workspace is not trusted. `enableAllProjectMcpServers` in a committed settings file is ignored until it is | Run `claude` in the repo, accept the trust dialog, then `/mcp` |
 | `${CLAUDE_PROJECT_DIR}` expands to nothing in `.mcp.json` | It is set in the server's environment, not Claude Code's, so a project-scoped file always takes the default | Only `${CLAUDE_PROJECT_DIR:-.}` expands at all, and it gives `.`. For an absolute path, use a dedicated env var |
 | A SQLite DSN fails with `unable to open database file` | The path is relative. `sqlite://./x.db` and `sqlite://sub/x.db` both fail; only an absolute path connects | `sqlite://` + an absolute path, supplied through an env var |

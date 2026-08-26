@@ -17,7 +17,7 @@
       "source": "ArkandiaLabs/arkandia-skills",
       "sourceType": "github",
       "skillPath": "arkandia/skills/instrument-agent-dotnet/SKILL.md",
-      "computedHash": "aec86ba801cc313372c0dd3d54843d008e775c44be0bb7dee430f48c48fafa0d"
+      "computedHash": "6d675fc6f3ae5ac8e752aabf3e9468bb13eaf37c8769db1782608d802912aba8"
     },
     "instrument-project-dotnet": {
       "source": "ArkandiaLabs/arkandia-skills",

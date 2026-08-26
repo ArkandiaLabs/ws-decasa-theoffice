@@ -65,6 +65,17 @@ team turns it off inside a day, and the one hook that actually blocked something
 the field, and tokenise the Bash command — whole-string matching cannot tell `cat .env` from
 `cat .env.example`, because the second contains the first.
 
+**And tokenising on whitespace is only half of it.** Every word of the command becomes a candidate
+path, sentences included, so `echo "=== LEDGER .env ==="`, `git commit -m "chore: ignore .env"` and
+`gh pr create --body "... .env ..."` are all denied — prose, opening nothing. That kind of denial
+looks like the guard working, so it gets worked around rather than reported, and the workaround
+ends at turning the hook off. The shipped tokeniser drops what nothing opens: the operands of
+`echo`/`printf`, heredoc bodies, the value of `-m`/`--body`/`--title`, and the pattern of a `grep`
+or `sed`. A quoted argument holding spaces is kept whole rather than split, so a sentence cannot
+match while `cat "my dir/.env"` still does — unless a shell is what runs it, and `bash -c "cat
+.env"` or `ssh host "cat .env"` gets re-scanned as the command it is. Runtime-built paths
+(`cat "$SECRET_FILE"`) stay invisible to any of this.
+
 **Known false positive, shipped on purpose.** `cp .env.example .env` is denied: one of its
 arguments is a bare `.env`. Creating a credential file is a step for a human, so the guard is
 right to stop the agent doing it unprompted.
@@ -78,11 +89,12 @@ filing a bug. Same for every other caveat in this document.
 by construction, because both phases have to handle strings the guard matches:
 
 - **Phase 5** must create, read and then delete a credential-shaped probe. Only the read should be
-  denied; the create and the delete are denied too, because the guard tokenises Bash commands and
-  cannot tell a path from a mention of one. `verification.md` has the recipe: a throwaway
-  directory, written with `Write`, removed with `rm -rf <dir>` so no command ever names the file.
-- **Phase 6** documents what this guard blocks, so that prose contains `.env` and `id_rsa`.
-  Through a Bash heredoc it is denied; through `Edit` or `Write` it is not.
+  denied; the create and the delete are denied too, because both take the probe as an operand.
+  `verification.md` has the recipe: a throwaway directory, written with `Write`, removed with
+  `rm -rf <dir>` so no command ever names the file.
+- **Phase 6** documents what this guard blocks, so that prose contains `.env` and `id_rsa`. The
+  tokeniser skips heredoc bodies and `echo` operands, so that prose passes — but write it with
+  `Edit` or `Write`, which are outside the matcher and do not depend on the tokeniser being right.
 
 Both are called out in `SKILL.md` rather than left to be discovered, because the natural reading
 of either failure is "the guard is broken" — which is exactly backwards.

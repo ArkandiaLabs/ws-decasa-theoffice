@@ -40,9 +40,9 @@ After every trigger, `git status` must look exactly as it did before it.
 
 1. **Reading the probe is denied — to you.** That is the proof, not an obstacle. Do not disable
    the hook to get past it.
-2. **Creating and deleting the probe are denied too**, because the guard tokenises Bash commands
-   and cannot tell a path from a mention of one. The recipe below sidesteps this; follow it
-   literally rather than improvising a workaround mid-phase.
+2. **Creating and deleting the probe are denied too**, because those commands take the probe as
+   an operand, and an operand that names a credential file is what the guard blocks. The recipe
+   below sidesteps it; follow it literally rather than improvising a workaround mid-phase.
 3. **The probe files are new and untracked**, so restoring means deleting them. Check
    `git status --porcelain` for leftovers before reporting.
 
@@ -61,9 +61,8 @@ literally — it is the only shape where all four steps are possible once the gu
 5.  Edit  .gitignore          →  remove the hooktest/ line
 ```
 
-**Why the directory.** The guard tokenises Bash commands and cannot tell a path from a mention of
-one, so **every command that names the probe file is denied — including the ones that clean it
-up.** `rm -f .env.hooktest` is refused. So is `git check-ignore -v .env.hooktest`. A probe in the
+**Why the directory.** The guard checks every operand of a Bash command, so **every command that
+names the probe file is denied — including the ones that clean it up.** `rm -f .env.hooktest` is refused. So is `git check-ignore -v .env.hooktest`. A probe in the
 root leaves you solving a puzzle in the middle of a mandatory phase, and the obvious conclusion —
 that the guard is broken — is the opposite of the truth. With the probe one level down, no
 cleanup command ever contains `.env`: `rm -rf hooktest` and `git check-ignore -v hooktest/` both
@@ -271,7 +270,7 @@ then. There is no equivalent of firing a hook.
 So verify what is verifiable, and be precise about the rest:
 
 ```bash
-python3 -c "import json;d=json.load(open('.mcp.json'));print(list(d['mcpServers']))"
+node -e "console.log(Object.keys(JSON.parse(require('fs').readFileSync('.mcp.json')).mcpServers))"
 grep -nE '"(env|headers)"' -A3 .mcp.json    # every value must be ${VAR}, never a literal
 ```
 
