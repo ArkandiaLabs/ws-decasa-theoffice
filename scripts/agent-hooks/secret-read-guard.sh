@@ -33,12 +33,15 @@ is_secret() {
 #
 #   1. operands of a text emitter (echo, printf, :) — output, not input.
 #   2. the body of a heredoc, and the word after `<<<` — data fed to a command, not a file name.
-#   3. the value of -m/--message/-b/--body/-t/--title/--notes — a message is prose by definition,
-#      and these are the flags an agent uses to commit and to open a PR.
+#   3. the value of --message/--body/--title/--notes, and of -m/-b/-t when the command is git or
+#      gh — a message is prose by definition, and these are the flags an agent uses to commit and
+#      to open a PR. The short forms are gated on the command name because they mean something
+#      else everywhere else: `cat -t .env` and `sort -b .env` carry no message, and skipping the
+#      word after the flag skipped the file being read.
 #   4. the first non-flag operand of grep/sed/awk and friends — that is the pattern or the
 #      script. `grep -n '\.env' .gitignore` reads .gitignore; the `.env` is what it looks FOR.
 #
-# What it does NOT drop, and the two rules that cost the most to get right:
+# What it does NOT drop, and the rules that cost the most to get right:
 #
 #   - A quoted argument holding spaces is kept WHOLE rather than split into words. Split, the
 #     sentence "adds .env to .gitignore" yields a bare `.env` and the commit is denied. Whole, it
@@ -47,6 +50,11 @@ is_secret() {
 #   - Unless the command RUNS that argument. `bash -c "cat .env"` and `ssh host "cat .env"` are
 #     opens wearing a sentence's clothes, so the argument is re-scanned as a command of its own.
 #     Without this rule, `-c` is a one-character bypass of the whole guard.
+#   - A command substitution inside any argument, in a suppressed segment too. `echo "$(cat .env)"`
+#     runs `cat` whatever the outer command is, and the operand of `echo` being dropped is what let
+#     it through. Only the text INSIDE `$(...)` or backticks is re-scanned, never the whole token:
+#     nesting all of `echo "adds .env $(date)"` would turn prose back into an operand list and
+#     re-deny exactly the case this tokeniser exists to allow.
 #
 # The command name itself IS emitted: `./.env` as a command is still an open. A brace expansion is
 # emitted as its alternatives too, since `cat {.env,.env.local}` opens two files under names that
@@ -94,18 +102,39 @@ operands() {
     }
 
     # Start of a new command: the next word is a command name, and the per-segment state resets.
-    function newseg() { seg_first = 1; suppress = 0; skip_next = 0; shellish = 0; patternish = 0 }
+    function newseg() { seg_first = 1; suppress = 0; skip_next = 0; shellish = 0; patternish = 0; msgish = 0; evalish = 0 }
 
     # Skip the heredoc body: everything up to a line that is exactly the delimiter.
-    function skip_heredoc(   line, nl) {
+    #
+    # If the delimiter never arrives, the command is truncated or malformed — and swallowing the
+    # rest of the payload would make an unterminated `<<EOF` an off switch for the whole guard.
+    # Fail CLOSED instead: rewind to where the body started and tokenise it as ordinary commands.
+    # Progress is still guaranteed, because the rewind lands past the `<<` that opened it.
+    function skip_heredoc(   line, nl, start) {
+      start = i
       while (i <= n) {
         nl = index(substr(src, i), "\n")
-        if (nl == 0) { i = n + 1; return }
+        if (nl == 0) { i = start; return }
         line = substr(src, i, nl - 1)
         i += nl
         gsub(/^[ \t]+|[ \t]+$/, "", line)
         if (line == delim) return
       }
+      i = start
+    }
+
+    # The text inside the FIRST `$(` (or backtick) and the LAST matching closer, or "" if the token
+    # holds no substitution. Deliberately not the whole token — see the header.
+    function substext(t,   a, k) {
+      a = index(t, "$(")
+      if (a > 0) {
+        for (k = length(t); k > a + 1; k--) if (substr(t, k, 1) == ")") return substr(t, a + 2, k - a - 2)
+      }
+      a = index(t, "`")
+      if (a > 0) {
+        for (k = length(t); k > a; k--) if (substr(t, k, 1) == "`") return substr(t, a + 1, k - a - 1)
+      }
+      return ""
     }
 
     END {
@@ -154,14 +183,13 @@ operands() {
         if (index(";|&()`", c) > 0) { i++; newseg(); continue }
 
         # One word, with quotes resolved.
-        tok = ""; quoted = 0; spaced = 0
+        tok = ""; quoted = 0
         while (i <= n) {
           c = substr(src, i, 1)
           if (c == "'"'"'") {
             quoted = 1; i++
             while (i <= n && substr(src, i, 1) != "'"'"'") {
               c = substr(src, i, 1)
-              if (c == " " || c == "\t" || c == "\n") spaced = 1
               tok = tok c; i++
             }
             i++
@@ -172,7 +200,6 @@ operands() {
             while (i <= n && substr(src, i, 1) != "\"") {
               c = substr(src, i, 1)
               if (c == "\\") { i++; c = substr(src, i, 1) }
-              if (c == " " || c == "\t" || c == "\n") spaced = 1
               tok = tok c; i++
             }
             i++
@@ -196,6 +223,10 @@ operands() {
           suppress   = (base ~ /^(echo|printf|:)$/)
           shellish   = (base ~ /^(sh|bash|zsh|ksh|dash|ssh|env|xargs|eval|sudo|doas|nohup|timeout|watch)$/)
           patternish = (base ~ /^(grep|egrep|fgrep|rg|ag|ack|sed|awk)$/)
+          # Only these take a message in a SHORT flag; -t and -b mean something else elsewhere.
+          msgish     = (base ~ /^(git|gh|hub|glab)$/)
+          # Interpreters whose -e is a program, not a pattern or an escape switch.
+          evalish    = (base ~ /^(node|nodejs|python|python[23]|perl|ruby|deno|bun)$/)
           emit(tok)
           continue
         }
@@ -204,11 +235,18 @@ operands() {
 
         # `-c` does not carry prose, it carries a command — mark the segment, do not skip.
         if (tok == "-c") { shellish = 1; continue }
-        if (tok ~ /^(-m|--message|-b|--body|-t|--title|--notes)$/) { skip_next = 1; continue }
+        if (evalish && (tok == "-e" || tok == "--eval")) { shellish = 1; continue }
+        if (tok ~ /^(--message|--body|--title|--notes)$/) { skip_next = 1; continue }
+        if (msgish && tok ~ /^(-m|-b|-t)$/) { skip_next = 1; continue }
 
         # A sentence handed to a shell is a command. Anywhere else it stays whole (see the header)
-        # and the anchors in SECRET_PATTERNS decide.
-        if (quoted && spaced && shellish) { nest(tok); continue }
+        # and the anchors in SECRET_PATTERNS decide. Spaces are NOT required: `python -c
+        # "open('.env')"` is one word and still runs a program.
+        if (quoted && shellish) { nest(tok); continue }
+
+        # A substitution runs its own command even where the outer one opens nothing.
+        inner = substext(tok)
+        if (inner != "") nest(inner)
 
         if (suppress) continue
 
