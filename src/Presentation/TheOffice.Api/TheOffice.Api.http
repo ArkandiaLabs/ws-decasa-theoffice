@@ -46,6 +46,29 @@ Accept: application/json
 GET {{host}}/api/v2/products/PRD-005
 Accept: application/json
 
+### v2 Crear producto con galeria y presentaciones
+POST {{host}}/api/v2/products
+Content-Type: application/json
+
+{
+  "publicId": "PRD-018",
+  "name": "Silla ejecutiva reclinable",
+  "description": "Silla ejecutiva en cuero sintetico con reclinacion y apoyacabezas.",
+  "price": 749000,
+  "stock": 0,
+  "categorySlug": "mobiliario",
+  "images": [
+    { "url": "https://media.example.com/prd-018-frente.png", "sortOrder": 0, "isPrimary": true },
+    { "url": "https://media.example.com/prd-018-lateral.png", "sortOrder": 1, "isPrimary": false },
+    { "url": "https://media.example.com/prd-018-detalle.png", "sortOrder": 2, "isPrimary": false }
+  ],
+  "variants": [
+    { "publicId": "PRD-018-NEG", "name": "Negro", "price": 749000, "stock": 8 },
+    { "publicId": "PRD-018-GRI", "name": "Gris", "price": 749000, "stock": 3 },
+    { "publicId": "PRD-018-ROJ", "name": "Rojo", "price": 789000, "stock": 0 }
+  ]
+}
+
 ### Categorias
 GET {{host}}/api/v1/categories
 Accept: application/json

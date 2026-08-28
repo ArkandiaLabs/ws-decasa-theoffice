@@ -9,4 +9,5 @@ public interface IProductRepository
   Task<Result> Create(Product product);
   Task<Product?> GetByPublicId(string publicId);
   Task<(IReadOnlyList<ProductListItem> Items, int TotalItems)> GetPagedList(int page, int pageSize, string? categorySlug, string? search);
+  Task<IReadOnlyList<string>> FindExistingPublicIds(string productPublicId, IReadOnlyList<string> variantPublicIds);
 }

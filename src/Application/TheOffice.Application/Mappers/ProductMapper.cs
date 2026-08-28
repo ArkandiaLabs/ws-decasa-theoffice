@@ -39,6 +39,62 @@ public static class ProductMapper
     return product;
   }
 
+  public static Product ToDomain(CreateProductV2Request request, Category category)
+  {
+    var productId = Guid.NewGuid();
+
+    var product = new Product
+    {
+      Id = productId,
+      PublicId = request.PublicId,
+      Name = request.Name,
+      Description = request.Description,
+      Price = request.Price,
+      Stock = request.Stock,
+      IsActive = true,
+      CategoryId = category.Id,
+      Category = category
+    };
+
+    var images = request.Images.OrderBy(x => x.SortOrder).ToList();
+
+    // Si nadie marco la principal, gana la de menor SortOrder y queda marcada en la fila.
+    // Derivarla solo al leer dejaria a la base sin registrar cual eligio quien carga.
+    var primaryIndex = images.FindIndex(x => x.IsPrimary);
+    if (primaryIndex < 0)
+    {
+      primaryIndex = 0;
+    }
+
+    for (var i = 0; i < images.Count; i++)
+    {
+      product.Images.Add(new ProductImage
+      {
+        Id = Guid.NewGuid(),
+        PublicId = $"{request.PublicId}-IMG-{i + 1}",
+        Url = images[i].Url,
+        SortOrder = images[i].SortOrder,
+        IsPrimary = i == primaryIndex,
+        ProductId = productId
+      });
+    }
+
+    foreach (var variant in request.Variants)
+    {
+      product.Variants.Add(new ProductVariant
+      {
+        Id = Guid.NewGuid(),
+        PublicId = variant.PublicId,
+        Name = variant.Name,
+        Price = variant.Price,
+        Stock = variant.Stock,
+        ProductId = productId
+      });
+    }
+
+    return product;
+  }
+
   // La foto principal: la marcada; si ninguna lo esta, la de menor SortOrder. El desempate
   // por PublicId mantiene la respuesta estable cuando dos fotos comparten SortOrder.
   public static string ResolvePrimaryImageUrl(Product product)

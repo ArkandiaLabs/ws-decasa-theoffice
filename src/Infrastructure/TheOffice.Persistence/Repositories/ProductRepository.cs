@@ -95,4 +95,29 @@ public class ProductRepository : IProductRepository
 
     return (items, totalItems);
   }
+
+  // Los PublicId ya tomados, para que el servicio devuelva un Result.Failure propio en vez
+  // de dejar que reviente el indice unico y se filtre el mensaje de SQLite al cliente.
+  public async Task<IReadOnlyList<string>> FindExistingPublicIds(string productPublicId, IReadOnlyList<string> variantPublicIds)
+  {
+    var taken = new List<string>();
+
+    if (await _context.Products.AsNoTracking().AnyAsync(x => x.PublicId == productPublicId))
+    {
+      taken.Add(productPublicId);
+    }
+
+    if (variantPublicIds.Count > 0)
+    {
+      var existing = await _context.ProductVariants
+        .AsNoTracking()
+        .Where(x => variantPublicIds.Contains(x.PublicId))
+        .Select(x => x.PublicId)
+        .ToListAsync();
+
+      taken.AddRange(existing);
+    }
+
+    return taken;
+  }
 }

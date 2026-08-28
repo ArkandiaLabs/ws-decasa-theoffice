@@ -38,4 +38,16 @@ public class ProductV2Controller : ControllerBase
 
     return Ok(result.Value);
   }
+
+  [HttpPost]
+  public async Task<IActionResult> Create(CreateProductV2Request request)
+  {
+    var result = await _productService.CreateV2(request);
+    if (!result.IsSuccess)
+    {
+      return BadRequest(result.Error);
+    }
+
+    return Ok(result.Value);
+  }
 }
