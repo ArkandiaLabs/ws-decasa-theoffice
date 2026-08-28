@@ -34,6 +34,18 @@ Content-Type: application/json
   "categorySlug": "organizacion"
 }
 
+### v2 Catalogo: listado con foto principal y disponibilidad
+GET {{host}}/api/v2/products
+Accept: application/json
+
+### v2 Catalogo: filtro por categoria
+GET {{host}}/api/v2/products?category=mobiliario
+Accept: application/json
+
+### v2 Detalle: galeria completa y presentaciones, incluidas las agotadas
+GET {{host}}/api/v2/products/PRD-005
+Accept: application/json
+
 ### Categorias
 GET {{host}}/api/v1/categories
 Accept: application/json
