@@ -70,11 +70,24 @@ path, sentences included, so `echo "=== LEDGER .env ==="`, `git commit -m "chore
 `gh pr create --body "... .env ..."` are all denied — prose, opening nothing. That kind of denial
 looks like the guard working, so it gets worked around rather than reported, and the workaround
 ends at turning the hook off. The shipped tokeniser drops what nothing opens: the operands of
-`echo`/`printf`, heredoc bodies, the value of `-m`/`--body`/`--title`, and the pattern of a `grep`
-or `sed`. A quoted argument holding spaces is kept whole rather than split, so a sentence cannot
-match while `cat "my dir/.env"` still does — unless a shell is what runs it, and `bash -c "cat
-.env"` or `ssh host "cat .env"` gets re-scanned as the command it is. Runtime-built paths
-(`cat "$SECRET_FILE"`) stay invisible to any of this.
+`echo`/`printf`, heredoc bodies, the value of `--message`/`--body`/`--title`, and the pattern of a
+`grep` or `sed`. A quoted argument holding spaces is kept whole rather than split, so a sentence
+cannot match while `cat "my dir/.env"` still does — unless a shell is what runs it, and
+`bash -c "cat .env"` or `ssh host "cat .env"` gets re-scanned as the command it is. Runtime-built
+paths (`cat "$SECRET_FILE"`) stay invisible to any of this.
+
+**Each of those drops is a hole if it is drawn one inch too wide.** They shipped
+together and were found together, so they are worth reading as one lesson: a rule that drops a
+token has to be narrower than the thing it is protecting.
+
+| The drop | Drawn too wide | Where it is drawn now |
+|---|---|---|
+| Operands of `echo`/`printf` | The whole token went, command substitution included: `echo "$(cat .env)"` ran `cat` and the guard never saw it | Every token is scanned for substitutions *before* any rule gets to drop it — a message, a heredoc word, an assignment, an `echo` operand. The text inside `$(…)` or backticks only, never the whole token, or the surrounding prose becomes operands again |
+| The value of a message flag | `-t` and `-b` were on the list, so `cat -t .env` and `sort -b .env` skipped the file as if it were a message | Long forms unconditionally; `-m`/`-b`/`-t` only when the command is `git`/`gh`/`hub`/`glab` |
+| A `-c` argument re-scanned as a command | Gated on the argument containing a space, so anything that fits in one word passed: `python -c "open('.env')"` | Any quoted argument to a `-c` (or an interpreter's `-e`), spaces or not |
+| The heredoc body | An unterminated `<<EOF` ran the skip to end of input, so one truncated command switched the guard off for everything after it | Fails closed: with no delimiter the body is rewound and tokenised as ordinary commands. A substitution in a body still runs and is still scanned, unless a quoted delimiter (`<<'EOF'`) turned expansion off |
+| The command name | Read off the first word, so a wrapper answered for the command it runs: `sudo git commit -m "…"` never saw a `git`, never skipped the `-m`, and re-scanned the message as a command | Wrappers (`sudo`, `env`, `timeout`, `nohup`, `xargs`, `nice`, …) are walked past — their flags, a duration, an assignment — and the word they actually run is what classifies the segment |
+| The bound on re-scanning | A count of four calls, spent by four ordinary substitutions (`cd "$(git rev-parse --show-toplevel)"` and friends); everything after them went unscanned, in silence | Budgeted in bytes appended. Still finite, no longer exhausted by commands an agent writes all day |
 
 **Known false positive, shipped on purpose.** `cp .env.example .env` is denied: one of its
 arguments is a bare `.env`. Creating a credential file is a step for a human, so the guard is

@@ -7,7 +7,23 @@
     "dbhub": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@bytebase/dbhub@1.2.1", "--transport", "stdio", "--dsn", "${APP_DSN}"]
+      "args": [
+        "-y",
+        "@bytebase/dbhub@1.2.1",
+        "--transport",
+        "stdio",
+        "--dsn",
+        "${APP_DSN}"
+      ]
+    },
+    "linear": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://mcp.linear.app/mcp"
+      ]
     }
   }
 }
