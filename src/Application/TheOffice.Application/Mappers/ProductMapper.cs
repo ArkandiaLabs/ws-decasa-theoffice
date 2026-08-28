@@ -56,7 +56,7 @@ public static class ProductMapper
       Category = category
     };
 
-    var images = request.Images.OrderBy(x => x.SortOrder).ToList();
+    var images = (request.Images ?? []).OrderBy(x => x.SortOrder).ToList();
 
     // Si nadie marco la principal, gana la de menor SortOrder y queda marcada en la fila.
     // Derivarla solo al leer dejaria a la base sin registrar cual eligio quien carga.
@@ -79,7 +79,7 @@ public static class ProductMapper
       });
     }
 
-    foreach (var variant in request.Variants)
+    foreach (var variant in request.Variants ?? [])
     {
       product.Variants.Add(new ProductVariant
       {

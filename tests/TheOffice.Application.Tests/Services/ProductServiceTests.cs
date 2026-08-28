@@ -451,6 +451,34 @@ public class ProductServiceTests
     Assert.Equal("https://media/prd-020.png", result.Value!.ImageUrl);
   }
 
+  [Fact]
+  public async Task CreateV2_EmptyPublicId_ReturnsFailure()
+  {
+    var result = await _sut.CreateV2(BuildCreateV2Request(publicId: "  "));
+
+    Assert.False(result.IsSuccess);
+    Assert.Equal("Public id is required and cannot exceed 40 characters", result.Error);
+  }
+
+  [Fact]
+  public async Task CreateV2_PublicIdTooLongForDerivedImageId_ReturnsFailure()
+  {
+    // 41 caracteres: el {publicId}-IMG-1 derivado se pasaria de los 50 de la columna.
+    var result = await _sut.CreateV2(BuildCreateV2Request(publicId: new string('P', 41)));
+
+    Assert.False(result.IsSuccess);
+    Assert.Equal("Public id is required and cannot exceed 40 characters", result.Error);
+  }
+
+  [Fact]
+  public async Task CreateV2_EmptyName_ReturnsFailure()
+  {
+    var result = await _sut.CreateV2(BuildCreateV2Request(name: ""));
+
+    Assert.False(result.IsSuccess);
+    Assert.Equal("Name is required and cannot exceed 150 characters", result.Error);
+  }
+
   // ---------- Helpers ----------
 
   private static Category BuildCategory(string publicId, string name, string slug)
@@ -536,12 +564,14 @@ public class ProductServiceTests
 
   private static CreateProductV2Request BuildCreateV2Request(
     string categorySlug = "mobiliario",
+    string publicId = "PRD-018",
+    string name = "Silla ejecutiva",
     IReadOnlyList<CreateProductImageRequest>? images = null,
     IReadOnlyList<CreateProductVariantRequest>? variants = null)
   {
     return new CreateProductV2Request(
-      "PRD-018",
-      "Silla ejecutiva",
+      publicId,
+      name,
       "Silla ejecutiva reclinable.",
       749000m,
       0,

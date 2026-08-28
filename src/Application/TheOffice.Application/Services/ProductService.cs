@@ -10,6 +10,10 @@ public class ProductService
 {
   private const int MaxPageSize = 50;
   private const int MaxUrlLength = 500;
+  private const int MaxNameLength = 150;
+  // El PublicId de cada foto se deriva del producto como {publicId}-IMG-{n} y la columna
+  // admite 50, asi que el del producto se acota mas corto para que el derivado quepa.
+  private const int MaxProductPublicIdLength = 40;
   private const int MaxVariantNameLength = 100;
 
   private readonly IProductRepository _productRepository;
@@ -94,6 +98,16 @@ public class ProductService
     // JSON deja null cuando la propiedad no viene, aunque el record la declare no nullable.
     var images = request.Images ?? [];
     var variants = request.Variants ?? [];
+
+    if (string.IsNullOrWhiteSpace(request.PublicId) || request.PublicId.Length > MaxProductPublicIdLength)
+    {
+      return Result.Failure<ProductV2Response>("Public id is required and cannot exceed 40 characters");
+    }
+
+    if (string.IsNullOrWhiteSpace(request.Name) || request.Name.Length > MaxNameLength)
+    {
+      return Result.Failure<ProductV2Response>("Name is required and cannot exceed 150 characters");
+    }
 
     if (images.Count == 0)
     {
