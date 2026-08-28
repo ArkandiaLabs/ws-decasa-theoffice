@@ -25,10 +25,6 @@ public class Product : BaseModel
   public decimal Price { get; set; }
 
   [Required]
-  [StringLength(500)]
-  public string ImageUrl { get; set; } = null!;
-
-  [Required]
   public int Stock { get; set; }
 
   [Required]
@@ -38,4 +34,8 @@ public class Product : BaseModel
   public Guid CategoryId { get; set; }
 
   public Category Category { get; set; } = null!;
+
+  public ICollection<ProductImage> Images { get; set; } = new List<ProductImage>();
+
+  public ICollection<ProductVariant> Variants { get; set; } = new List<ProductVariant>();
 }

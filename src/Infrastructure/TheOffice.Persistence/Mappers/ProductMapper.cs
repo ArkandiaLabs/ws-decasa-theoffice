@@ -13,11 +13,12 @@ public static class ProductMapper
     domainProduct.Name = product.Name;
     domainProduct.Description = product.Description;
     domainProduct.Price = product.Price;
-    domainProduct.ImageUrl = product.ImageUrl;
     domainProduct.Stock = product.Stock;
     domainProduct.IsActive = product.IsActive;
     domainProduct.CategoryId = product.CategoryId;
     domainProduct.Category = product.Category == null ? null : CategoryMapper.ToDomain(product.Category);
+    domainProduct.Images = product.Images.Select(ProductImageMapper.ToDomain).ToList();
+    domainProduct.Variants = product.Variants.Select(ProductVariantMapper.ToDomain).ToList();
 
     return domainProduct;
   }
@@ -30,10 +31,11 @@ public static class ProductMapper
     modelProduct.Name = product.Name;
     modelProduct.Description = product.Description;
     modelProduct.Price = product.Price;
-    modelProduct.ImageUrl = product.ImageUrl;
     modelProduct.Stock = product.Stock;
     modelProduct.IsActive = product.IsActive;
     modelProduct.CategoryId = product.CategoryId;
+    modelProduct.Images = product.Images.Select(ProductImageMapper.ToModel).ToList();
+    modelProduct.Variants = product.Variants.Select(ProductVariantMapper.ToModel).ToList();
 
     return modelProduct;
   }

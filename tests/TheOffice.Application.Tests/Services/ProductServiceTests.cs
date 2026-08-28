@@ -207,18 +207,36 @@ public class ProductServiceTests
 
   private static Product BuildProduct(string publicId, string name, decimal price, int stock, Category? category)
   {
-    return new Product
+    var productId = Guid.NewGuid();
+
+    var product = new Product
     {
-      Id = Guid.NewGuid(),
+      Id = productId,
       PublicId = publicId,
       Name = name,
       Description = $"Descripcion de {name}",
       Price = price,
-      ImageUrl = $"https://img/{publicId}.jpg",
       Stock = stock,
       IsActive = true,
       CategoryId = category?.Id ?? Guid.Empty,
       Category = category
+    };
+
+    product.Images.Add(BuildImage(productId, publicId, $"https://img/{publicId}.jpg", 0, true));
+
+    return product;
+  }
+
+  private static ProductImage BuildImage(Guid productId, string productPublicId, string url, int sortOrder, bool isPrimary)
+  {
+    return new ProductImage
+    {
+      Id = Guid.NewGuid(),
+      PublicId = $"{productPublicId}-IMG-{sortOrder + 1}",
+      Url = url,
+      SortOrder = sortOrder,
+      IsPrimary = isPrimary,
+      ProductId = productId
     };
   }
 }

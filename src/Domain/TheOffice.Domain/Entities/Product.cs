@@ -7,9 +7,10 @@ public class Product
   public string Name { get; set; } = null!;
   public string Description { get; set; } = null!;
   public decimal Price { get; set; }
-  public string ImageUrl { get; set; } = null!;
   public int Stock { get; set; }
   public bool IsActive { get; set; }
   public Guid CategoryId { get; set; }
   public Category? Category { get; set; }
+  public ICollection<ProductImage> Images { get; set; } = new List<ProductImage>();
+  public ICollection<ProductVariant> Variants { get; set; } = new List<ProductVariant>();
 }
