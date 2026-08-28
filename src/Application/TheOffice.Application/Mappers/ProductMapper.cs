@@ -59,16 +59,19 @@ public static class ProductMapper
       : product.Variants.Sum(x => x.Stock);
   }
 
-  public static ProductSummaryResponse ToSummary(Product product)
+  // El listado ya llega derivado desde el repositorio: la foto principal y el stock
+  // agregado se resuelven en SQL con la misma regla que ResolvePrimaryImageUrl y
+  // ResolveStock aplican sobre el detalle.
+  public static ProductSummaryResponse ToSummary(ProductListItem item)
   {
     return new ProductSummaryResponse(
-      product.PublicId,
-      product.Name,
-      product.Price,
-      ResolvePrimaryImageUrl(product),
-      ResolveStock(product),
-      product.Category?.Name ?? string.Empty,
-      product.Category?.Slug ?? string.Empty);
+      item.PublicId,
+      item.Name,
+      item.Price,
+      item.PrimaryImage?.Url ?? string.Empty,
+      item.Stock,
+      item.CategoryName,
+      item.CategorySlug);
   }
 
   public static ProductResponse ToResponse(Product product)

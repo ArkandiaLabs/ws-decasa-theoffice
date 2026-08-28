@@ -26,16 +26,16 @@ public class ProductServiceTests
   public async Task GetAll_SinFiltros_DevuelvePaginaConTodosLosProductos()
   {
     var sillas = BuildCategory("CAT-001", "Sillas", "sillas");
-    var products = new List<Product>
+    var products = new List<ProductListItem>
     {
-      BuildProduct("PRD-001", "Silla Ergonomica", 199.99m, 10, sillas),
-      BuildProduct("PRD-002", "Silla Gamer", 349.50m, 4, sillas)
+      BuildListItem("PRD-001", "Silla Ergonomica", 199.99m, 10, sillas),
+      BuildListItem("PRD-002", "Silla Gamer", 349.50m, 4, sillas)
     };
-    _productRepository.GetPaged(1, 6, null, null).Returns(((IReadOnlyList<Product>)products, 2));
+    _productRepository.GetPagedList(1, 6, null, null).Returns(((IReadOnlyList<ProductListItem>)products, 2));
 
     var result = await _sut.GetAll(new ProductQuery());
 
-    await _productRepository.Received(1).GetPaged(1, 6, null, null);
+    await _productRepository.Received(1).GetPagedList(1, 6, null, null);
     Assert.Equal(1, result.Page);
     Assert.Equal(6, result.PageSize);
     Assert.Equal(2, result.TotalItems);
@@ -52,7 +52,7 @@ public class ProductServiceTests
   [Fact]
   public async Task GetAll_RepositorioSinResultados_DevuelvePaginaVacia()
   {
-    _productRepository.GetPaged(1, 6, null, null).Returns(((IReadOnlyList<Product>)[], 0));
+    _productRepository.GetPagedList(1, 6, null, null).Returns(((IReadOnlyList<ProductListItem>)[], 0));
 
     var result = await _sut.GetAll(new ProductQuery());
 
@@ -64,8 +64,8 @@ public class ProductServiceTests
   [Fact]
   public async Task GetAll_ProductoSinCategoria_DevuelveNombreYSlugVacios()
   {
-    var products = new List<Product> { BuildProduct("PRD-003", "Mesa Suelta", 89m, 1, category: null) };
-    _productRepository.GetPaged(1, 6, null, null).Returns(((IReadOnlyList<Product>)products, 1));
+    var products = new List<ProductListItem> { BuildListItem("PRD-003", "Mesa Suelta", 89m, 1, category: null) };
+    _productRepository.GetPagedList(1, 6, null, null).Returns(((IReadOnlyList<ProductListItem>)products, 1));
 
     var result = await _sut.GetAll(new ProductQuery());
 
@@ -79,19 +79,19 @@ public class ProductServiceTests
   [Fact]
   public async Task GetAll_ConCategoria_PropagaElSlugAlRepositorio()
   {
-    _productRepository.GetPaged(1, 6, "sillas", null).Returns(((IReadOnlyList<Product>)[], 0));
+    _productRepository.GetPagedList(1, 6, "sillas", null).Returns(((IReadOnlyList<ProductListItem>)[], 0));
 
     await _sut.GetAll(new ProductQuery { Category = "sillas" });
 
-    await _productRepository.Received(1).GetPaged(1, 6, "sillas", null);
+    await _productRepository.Received(1).GetPagedList(1, 6, "sillas", null);
   }
 
   [Fact]
   public async Task GetAll_ConCategoria_DevuelveSoloLoQueEntregaElRepositorio()
   {
     var mesas = BuildCategory("CAT-002", "Mesas", "mesas");
-    var products = new List<Product> { BuildProduct("PRD-010", "Mesa de Juntas", 899m, 2, mesas) };
-    _productRepository.GetPaged(1, 6, "mesas", null).Returns(((IReadOnlyList<Product>)products, 1));
+    var products = new List<ProductListItem> { BuildListItem("PRD-010", "Mesa de Juntas", 899m, 2, mesas) };
+    _productRepository.GetPagedList(1, 6, "mesas", null).Returns(((IReadOnlyList<ProductListItem>)products, 1));
 
     var result = await _sut.GetAll(new ProductQuery { Category = "mesas" });
 
@@ -104,11 +104,11 @@ public class ProductServiceTests
   [Fact]
   public async Task GetAll_ConCategoriaYBusqueda_PropagaAmbosFiltros()
   {
-    _productRepository.GetPaged(2, 10, "sillas", "gamer").Returns(((IReadOnlyList<Product>)[], 0));
+    _productRepository.GetPagedList(2, 10, "sillas", "gamer").Returns(((IReadOnlyList<ProductListItem>)[], 0));
 
     await _sut.GetAll(new ProductQuery { Page = 2, PageSize = 10, Category = "sillas", Search = "gamer" });
 
-    await _productRepository.Received(1).GetPaged(2, 10, "sillas", "gamer");
+    await _productRepository.Received(1).GetPagedList(2, 10, "sillas", "gamer");
   }
 
   // ---------- GetAll: normalizacion de paginacion ----------
@@ -122,12 +122,12 @@ public class ProductServiceTests
   [InlineData(1, 50, 1, 50)]   // limite exacto
   public async Task GetAll_NormalizaPaginacion(int page, int pageSize, int expectedPage, int expectedPageSize)
   {
-    _productRepository.GetPaged(expectedPage, expectedPageSize, null, null)
-      .Returns(((IReadOnlyList<Product>)[], 0));
+    _productRepository.GetPagedList(expectedPage, expectedPageSize, null, null)
+      .Returns(((IReadOnlyList<ProductListItem>)[], 0));
 
     var result = await _sut.GetAll(new ProductQuery { Page = page, PageSize = pageSize });
 
-    await _productRepository.Received(1).GetPaged(expectedPage, expectedPageSize, null, null);
+    await _productRepository.Received(1).GetPagedList(expectedPage, expectedPageSize, null, null);
     Assert.Equal(expectedPage, result.Page);
     Assert.Equal(expectedPageSize, result.PageSize);
   }
@@ -238,5 +238,18 @@ public class ProductServiceTests
       IsPrimary = isPrimary,
       ProductId = productId
     };
+  }
+
+  private static ProductListItem BuildListItem(string publicId, string name, decimal price, int stock, Category? category)
+  {
+    return new ProductListItem(
+      publicId,
+      name,
+      price,
+      stock,
+      category?.Name ?? string.Empty,
+      category?.Slug ?? string.Empty,
+      new ProductImageResponse($"{publicId}-IMG-1", $"https://img/{publicId}.jpg", 0, true),
+      0);
   }
 }

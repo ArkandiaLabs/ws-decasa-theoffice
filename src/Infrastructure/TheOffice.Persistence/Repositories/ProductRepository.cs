@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
+using TheOffice.Application.DTOs;
 using TheOffice.Application.Interfaces.Persistence;
 using TheOffice.Domain.Common;
 using TheOffice.Persistence.Mappers;
@@ -41,17 +42,18 @@ public class ProductRepository : IProductRepository
     var product = await _context.Products
       .AsNoTracking()
       .Include(x => x.Category)
+      .Include(x => x.Images)
+      .Include(x => x.Variants)
       .SingleOrDefaultAsync(x => x.PublicId == publicId);
 
     return product != null ? ProductMapper.ToDomain(product) : null;
   }
 
-  public async Task<(IReadOnlyList<DomainEntities.Product> Items, int TotalItems)> GetPaged(
+  public async Task<(IReadOnlyList<ProductListItem> Items, int TotalItems)> GetPagedList(
     int page, int pageSize, string? categorySlug, string? search)
   {
     var query = _context.Products
       .AsNoTracking()
-      .Include(x => x.Category)
       .Where(x => x.IsActive);
 
     if (!string.IsNullOrWhiteSpace(categorySlug))
@@ -68,12 +70,29 @@ public class ProductRepository : IProductRepository
 
     var totalItems = await query.CountAsync();
 
-    var products = await query
+    // El orden de la foto principal es el mismo que aplica ProductMapper sobre el detalle:
+    // la marcada, si no la de menor SortOrder, y PublicId para desempatar. Si las dos
+    // expresiones divergen, el listado y el detalle devuelven imageUrl distintas.
+    var items = await query
       .OrderBy(x => x.Name)
       .Skip((page - 1) * pageSize)
       .Take(pageSize)
+      .Select(x => new ProductListItem(
+        x.PublicId,
+        x.Name,
+        x.Price,
+        x.Variants.Count == 0 ? x.Stock : x.Variants.Sum(v => v.Stock),
+        x.Category.Name,
+        x.Category.Slug,
+        x.Images
+          .OrderByDescending(i => i.IsPrimary)
+          .ThenBy(i => i.SortOrder)
+          .ThenBy(i => i.PublicId)
+          .Select(i => new ProductImageResponse(i.PublicId, i.Url, i.SortOrder, i.IsPrimary))
+          .FirstOrDefault(),
+        x.Variants.Count))
       .ToListAsync();
 
-    return (products.Select(ProductMapper.ToDomain).ToList(), totalItems);
+    return (items, totalItems);
   }
 }

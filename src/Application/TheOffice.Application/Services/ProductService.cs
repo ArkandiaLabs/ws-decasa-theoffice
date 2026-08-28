@@ -29,7 +29,7 @@ public class ProductService
     var page = query.Page < 1 ? 1 : query.Page;
     var pageSize = Math.Clamp(query.PageSize, 1, MaxPageSize);
 
-    var (products, totalItems) = await _productRepository.GetPaged(page, pageSize, query.Category, query.Search);
+    var (products, totalItems) = await _productRepository.GetPagedList(page, pageSize, query.Category, query.Search);
 
     return new PagedResult<ProductSummaryResponse>(
       products.Select(ProductMapper.ToSummary).ToList(),
