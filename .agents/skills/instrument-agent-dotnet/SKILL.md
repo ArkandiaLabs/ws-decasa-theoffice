@@ -385,8 +385,9 @@ Follow `references/documentation.md`. **Update what exists; do not create the do
 **Write this prose with Edit and Write.** This phase documents what the secret guard blocks, so
 the text you are writing contains the strings `.env`, `id_rsa`, `secrets.json`. The guard skips a
 heredoc body and the operands of an `echo`, so prose that merely names those files is no longer
-denied — but the file a redirection opens is still checked, and so is every operand that names a
-credential. `Edit` and `Write` are outside the matcher entirely, deliberately: they do not depend
+denied — but the file a redirection opens is still checked, so is every operand that names a
+credential, so is anything inside a `$(…)`, and a heredoc whose delimiter never arrives is scanned
+rather than skipped. `Edit` and `Write` are outside the matcher entirely, deliberately: they do not depend
 on the tokeniser being right.
 
 Required, in order:
@@ -458,7 +459,7 @@ Do not commit. Leave the changes for the user to review.
 | Symptom | Almost always | Confirm with |
 |---|---|---|
 | A guard never fires, and never errors | `set -o pipefail` in the script. A filter that short-circuits (`grep -q`, `head -1`) raises SIGPIPE, the pipeline reports failure, and the guard falls through to allow — silently | Remove `pipefail`; the scripts use `set -u` alone for exactly this reason |
-| A guard fires on things it should not | The pattern is matched against the whole stdin payload instead of a field — or against every word of `tool_input.command`, which denies prose: a commit message, a PR body, an `echo` that names the file | Match `tool_input.file_path`. For Bash, tokenise `tool_input.command` **and drop what nothing opens** — `echo`/`printf` operands, heredoc bodies, the value of `-m`/`--body`/`--title`, a `grep` pattern. `secret-read-guard.sh` is the worked example |
+| A guard fires on things it should not | The pattern is matched against the whole stdin payload instead of a field — or against every word of `tool_input.command`, which denies prose: a commit message, a PR body, an `echo` that names the file | Match `tool_input.file_path`. For Bash, tokenise `tool_input.command` **and drop what nothing opens** — `echo`/`printf` operands, heredoc bodies, the value of `--message`/`--body`/`--title`, a `grep` pattern. Draw each drop narrowly, or it becomes a bypass: `hook-catalog.md` has the four that were once too wide. `secret-read-guard.sh` is the worked example |
 | A path check never matches on Windows | `tool_input.file_path` arrives with backslashes, even under Git Bash | `json_path` in `_lib.sh` normalises them; use it instead of `json_raw` for anything path-shaped |
 | Hooks do nothing at all on Windows | Git Bash is absent, so Claude Code fell back to PowerShell and the `.sh` never ran | `bash --version` in the user's shell |
 | `settings.json` edits appear to be ignored | The file no longer parses. Malformed JSON drops the hooks rather than reporting an error | `node -e "JSON.parse(require('fs').readFileSync('.claude/settings.json'))"` |

@@ -17,7 +17,7 @@
       "source": "ArkandiaLabs/arkandia-skills",
       "sourceType": "github",
       "skillPath": "arkandia/skills/instrument-agent-dotnet/SKILL.md",
-      "computedHash": "6d675fc6f3ae5ac8e752aabf3e9468bb13eaf37c8769db1782608d802912aba8"
+      "computedHash": "e3d45a492321bc1c50af139d2480bfc535b4951b3f31db07085600294931a4e2"
     },
     "instrument-project-dotnet": {
       "source": "ArkandiaLabs/arkandia-skills",
@@ -29,7 +29,13 @@
       "source": "ArkandiaLabs/arkandia-skills",
       "sourceType": "github",
       "skillPath": "arkandia/skills/linear-plan-build/SKILL.md",
-      "computedHash": "4537b8957e61df73141f324f48d10f7c1f12cefc274fa45250727bc7c305abfa"
+      "computedHash": "9918025008e88b27c4c858bf6677fe0e9bdf99f7b5d015ac8bd786416fc243cc"
+    },
+    "requirement-to-spec": {
+      "source": "ArkandiaLabs/arkandia-skills",
+      "sourceType": "github",
+      "skillPath": "arkandia/skills/requirement-to-spec/SKILL.md",
+      "computedHash": "6e83c807ce79d43008105544b48208c16e03f40104c5045373062ac9fdbb7972"
     }
   }
 }
