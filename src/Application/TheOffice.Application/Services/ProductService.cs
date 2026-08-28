@@ -11,6 +11,8 @@ public class ProductService
   private const int MaxPageSize = 50;
   private const int MaxUrlLength = 500;
   private const int MaxNameLength = 150;
+  private const int MaxDescriptionLength = 1000;
+  private const int MaxPublicIdLength = 50;
   // El PublicId de cada foto se deriva del producto como {publicId}-IMG-{n} y la columna
   // admite 50, asi que el del producto se acota mas corto para que el derivado quepa.
   private const int MaxProductPublicIdLength = 40;
@@ -109,6 +111,11 @@ public class ProductService
       return Result.Failure<ProductV2Response>("Name is required and cannot exceed 150 characters");
     }
 
+    if (request.Description is null || request.Description.Length > MaxDescriptionLength)
+    {
+      return Result.Failure<ProductV2Response>("Description cannot exceed 1000 characters");
+    }
+
     if (images.Count == 0)
     {
       return Result.Failure<ProductV2Response>("A product needs at least one image");
@@ -136,9 +143,9 @@ public class ProductService
 
     foreach (var variant in variants)
     {
-      if (string.IsNullOrWhiteSpace(variant.PublicId))
+      if (string.IsNullOrWhiteSpace(variant.PublicId) || variant.PublicId.Length > MaxPublicIdLength)
       {
-        return Result.Failure<ProductV2Response>("Every variant needs a public id");
+        return Result.Failure<ProductV2Response>("Variant public id is required and cannot exceed 50 characters");
       }
 
       if (string.IsNullOrWhiteSpace(variant.Name) || variant.Name.Length > MaxVariantNameLength)
@@ -150,6 +157,14 @@ public class ProductService
       {
         return Result.Failure<ProductV2Response>($"Variant price and stock cannot be negative: {variant.PublicId}");
       }
+    }
+
+    // La suma alimenta v1.stock y ProductListItem.Stock, los dos int. Sin esta cota,
+    // dos presentaciones con Stock cercano al maximo hacen que Sum lance OverflowException
+    // al leer, con el producto ya guardado.
+    if (variants.Sum(x => (long)x.Stock) > int.MaxValue)
+    {
+      return Result.Failure<ProductV2Response>("Total stock across variants cannot exceed 2147483647");
     }
 
     var duplicated = variants

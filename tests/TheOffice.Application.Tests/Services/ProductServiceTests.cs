@@ -479,6 +479,45 @@ public class ProductServiceTests
     Assert.Equal("Name is required and cannot exceed 150 characters", result.Error);
   }
 
+  [Fact]
+  public async Task CreateV2_DescriptionTooLong_ReturnsFailure()
+  {
+    var result = await _sut.CreateV2(BuildCreateV2Request(description: new string('D', 1001)));
+
+    Assert.False(result.IsSuccess);
+    Assert.Equal("Description cannot exceed 1000 characters", result.Error);
+  }
+
+  [Fact]
+  public async Task CreateV2_VariantPublicIdTooLong_ReturnsFailure()
+  {
+    var request = BuildCreateV2Request(variants:
+    [
+      new CreateProductVariantRequest(new string('V', 51), "Negro", 100m, 1)
+    ]);
+
+    var result = await _sut.CreateV2(request);
+
+    Assert.False(result.IsSuccess);
+    Assert.Equal("Variant public id is required and cannot exceed 50 characters", result.Error);
+  }
+
+  [Fact]
+  public async Task CreateV2_TotalVariantStockOverflowsInt_ReturnsFailure()
+  {
+    // Cada Stock es valido por separado; la suma no cabe en el int que expone v1.
+    var request = BuildCreateV2Request(variants:
+    [
+      new CreateProductVariantRequest("PRD-018-NEG", "Negro", 100m, int.MaxValue),
+      new CreateProductVariantRequest("PRD-018-GRI", "Gris", 100m, 1)
+    ]);
+
+    var result = await _sut.CreateV2(request);
+
+    Assert.False(result.IsSuccess);
+    Assert.Equal("Total stock across variants cannot exceed 2147483647", result.Error);
+  }
+
   // ---------- Helpers ----------
 
   private static Category BuildCategory(string publicId, string name, string slug)
@@ -566,13 +605,14 @@ public class ProductServiceTests
     string categorySlug = "mobiliario",
     string publicId = "PRD-018",
     string name = "Silla ejecutiva",
+    string description = "Silla ejecutiva reclinable.",
     IReadOnlyList<CreateProductImageRequest>? images = null,
     IReadOnlyList<CreateProductVariantRequest>? variants = null)
   {
     return new CreateProductV2Request(
       publicId,
       name,
-      "Silla ejecutiva reclinable.",
+      description,
       749000m,
       0,
       categorySlug,

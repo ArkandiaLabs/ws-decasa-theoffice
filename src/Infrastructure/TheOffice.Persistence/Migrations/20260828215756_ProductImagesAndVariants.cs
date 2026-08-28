@@ -134,12 +134,6 @@ namespace TheOffice.Persistence.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "ProductImages");
-
-            migrationBuilder.DropTable(
-                name: "ProductVariants");
-
             migrationBuilder.AddColumn<string>(
                 name: "ImageUrl",
                 table: "Products",
@@ -147,6 +141,22 @@ namespace TheOffice.Persistence.Migrations
                 maxLength: 500,
                 nullable: false,
                 defaultValue: "");
+
+            // Espejo del backfill de Up(): la columna se restaura ANTES de tirar la tabla,
+            // o el rollback deja sin foto a todo producto que no venga del seeder.
+            migrationBuilder.Sql(
+                @"UPDATE Products
+                  SET ImageUrl = COALESCE((
+                    SELECT i.Url FROM ProductImages i
+                    WHERE i.ProductId = Products.Id
+                    ORDER BY i.IsPrimary DESC, i.SortOrder ASC, i.PublicId ASC
+                    LIMIT 1), '');");
+
+            migrationBuilder.DropTable(
+                name: "ProductImages");
+
+            migrationBuilder.DropTable(
+                name: "ProductVariants");
 
             migrationBuilder.UpdateData(
                 table: "Products",
