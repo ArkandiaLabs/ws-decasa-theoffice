@@ -74,6 +74,44 @@ public static class ProductMapper
       item.CategorySlug);
   }
 
+  public static ProductSummaryV2Response ToSummaryV2(ProductListItem item)
+  {
+    return new ProductSummaryV2Response(
+      item.PublicId,
+      item.Name,
+      item.Price,
+      item.PrimaryImage,
+      item.Stock,
+      item.Stock > 0,
+      item.VariantCount,
+      item.CategoryName,
+      item.CategorySlug);
+  }
+
+  public static ProductV2Response ToResponseV2(Product product)
+  {
+    return new ProductV2Response(
+      product.PublicId,
+      product.Name,
+      product.Description,
+      product.Price,
+      ResolveStock(product),
+      product.IsActive,
+      // El orden de la galeria lo define quien carga, no la base: el Include no garantiza
+      // ninguno, asi que se ordena aqui.
+      product.Images
+        .OrderBy(x => x.SortOrder)
+        .ThenBy(x => x.PublicId, StringComparer.Ordinal)
+        .Select(x => new ProductImageResponse(x.PublicId, x.Url, x.SortOrder, x.IsPrimary))
+        .ToList(),
+      // Ninguna presentacion se filtra: una con Stock 0 sale marcada como no disponible.
+      product.Variants
+        .OrderBy(x => x.PublicId, StringComparer.Ordinal)
+        .Select(x => new ProductVariantResponse(x.PublicId, x.Name, x.Price, x.Stock, x.Stock > 0))
+        .ToList(),
+      product.Category == null ? null : CategoryMapper.ToResponse(product.Category));
+  }
+
   public static ProductResponse ToResponse(Product product)
   {
     return new ProductResponse(

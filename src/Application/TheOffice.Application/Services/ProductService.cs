@@ -45,6 +45,27 @@ public class ProductService
     return product == null ? null : Result.Success(ProductMapper.ToResponse(product));
   }
 
+  public async Task<PagedResult<ProductSummaryV2Response>> GetAllV2(ProductQuery query)
+  {
+    var page = query.Page < 1 ? 1 : query.Page;
+    var pageSize = Math.Clamp(query.PageSize, 1, MaxPageSize);
+
+    var (products, totalItems) = await _productRepository.GetPagedList(page, pageSize, query.Category, query.Search);
+
+    return new PagedResult<ProductSummaryV2Response>(
+      products.Select(ProductMapper.ToSummaryV2).ToList(),
+      page,
+      pageSize,
+      totalItems);
+  }
+
+  public async Task<Result<ProductV2Response>?> GetByPublicIdV2(string publicId)
+  {
+    var product = await _productRepository.GetByPublicId(publicId);
+
+    return product == null ? null : Result.Success(ProductMapper.ToResponseV2(product));
+  }
+
   public async Task<Result<ProductResponse>> Create(CreateProductRequest request)
   {
     var category = await _categoryRepository.GetBySlug(request.CategorySlug);

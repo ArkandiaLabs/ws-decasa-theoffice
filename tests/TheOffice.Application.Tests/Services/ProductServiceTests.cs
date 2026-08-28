@@ -191,6 +191,74 @@ public class ProductServiceTests
     await _productRepository.Received(1).GetByPublicId("PRD-001");
   }
 
+  // ---------- Derivacion de v1: el contrato congelado ----------
+
+  [Fact]
+  public async Task GetByPublicId_ProductWithVariants_SumsVariantStock()
+  {
+    var product = BuildProduct("PRD-005", "Silla Ergonomica", 689000m, 25, BuildCategory("CAT-002", "Mobiliario", "mobiliario"));
+    product.Variants.Add(BuildVariant(product.Id, "PRD-005-NEG", "Negro", 689000m, 8));
+    product.Variants.Add(BuildVariant(product.Id, "PRD-005-GRI", "Gris", 689000m, 3));
+    product.Variants.Add(BuildVariant(product.Id, "PRD-005-ROJ", "Rojo", 689000m, 0));
+    _productRepository.GetByPublicId("PRD-005").Returns(product);
+
+    var result = await _sut.GetByPublicId("PRD-005");
+
+    // 8 + 3 + 0, no el Stock 25 que el producto lleva encima.
+    Assert.Equal(11, result!.Value!.Stock);
+  }
+
+  [Fact]
+  public async Task GetByPublicId_ProductWithoutVariants_UsesOwnStock()
+  {
+    var product = BuildProduct("PRD-001", "Resma de papel", 18900m, 120, category: null);
+    _productRepository.GetByPublicId("PRD-001").Returns(product);
+
+    var result = await _sut.GetByPublicId("PRD-001");
+
+    Assert.Equal(120, result!.Value!.Stock);
+  }
+
+  [Fact]
+  public async Task GetByPublicId_WithPrimaryImage_PrefersItOverSortOrder()
+  {
+    var product = BuildProduct("PRD-004", "Marcador borrable", 15400m, 10, category: null);
+    product.Images.Clear();
+    product.Images.Add(BuildImage(product.Id, "PRD-004", "https://img/no-principal.jpg", 0, false));
+    product.Images.Add(BuildImage(product.Id, "PRD-004", "https://img/principal.jpg", 9, true));
+    _productRepository.GetByPublicId("PRD-004").Returns(product);
+
+    var result = await _sut.GetByPublicId("PRD-004");
+
+    Assert.Equal("https://img/principal.jpg", result!.Value!.ImageUrl);
+  }
+
+  [Fact]
+  public async Task GetByPublicId_WithoutPrimaryImage_ReturnsLowestSortOrderUrl()
+  {
+    var product = BuildProduct("PRD-002", "Cuaderno argollado", 12500m, 10, category: null);
+    product.Images.Clear();
+    product.Images.Add(BuildImage(product.Id, "PRD-002", "https://img/segunda.jpg", 5, false));
+    product.Images.Add(BuildImage(product.Id, "PRD-002", "https://img/primera.jpg", 1, false));
+    _productRepository.GetByPublicId("PRD-002").Returns(product);
+
+    var result = await _sut.GetByPublicId("PRD-002");
+
+    Assert.Equal("https://img/primera.jpg", result!.Value!.ImageUrl);
+  }
+
+  [Fact]
+  public async Task GetByPublicId_ProductWithoutImages_ReturnsEmptyImageUrl()
+  {
+    var product = BuildProduct("PRD-003", "Boligrafo tinta negra", 9800m, 10, category: null);
+    product.Images.Clear();
+    _productRepository.GetByPublicId("PRD-003").Returns(product);
+
+    var result = await _sut.GetByPublicId("PRD-003");
+
+    Assert.Equal(string.Empty, result!.Value!.ImageUrl);
+  }
+
   // ---------- Helpers ----------
 
   private static Category BuildCategory(string publicId, string name, string slug)
@@ -251,5 +319,18 @@ public class ProductServiceTests
       category?.Slug ?? string.Empty,
       new ProductImageResponse($"{publicId}-IMG-1", $"https://img/{publicId}.jpg", 0, true),
       0);
+  }
+
+  private static ProductVariant BuildVariant(Guid productId, string publicId, string name, decimal price, int stock)
+  {
+    return new ProductVariant
+    {
+      Id = Guid.NewGuid(),
+      PublicId = publicId,
+      Name = name,
+      Price = price,
+      Stock = stock,
+      ProductId = productId
+    };
   }
 }
