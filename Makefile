@@ -99,8 +99,12 @@ web-run: ## Run the frontend dev server (needs the API up)
 # Con un `wait` a secas, un frontend caido dejaba la API viva y su fallo se perdia entre los
 # logs de la API — que es exactamente como se descubrio esto.
 dev: ## Run the API and the frontend together (Ctrl-C stops both)
-	@echo "API -> http://localhost:5226  ·  docs en /scalar"
-	@echo "Web -> http://localhost:4200"
+	@echo ""
+	@echo "  Abre la app aqui:  http://localhost:4200"
+	@echo ""
+	@echo "  La API es http://localhost:5226 y no se abre en el navegador: su raiz no expone"
+	@echo "  nada y responde 404. Sus rutas son /api/v1/... y su documentacion /scalar."
+	@echo ""
 	@trap 'kill 0' EXIT INT TERM; \
 	  ( dotnet run --project $(API); kill 0 ) & \
 	  ( cd $(WEB) && $(WEB_ENV) && pnpm start; kill 0 ) & \
