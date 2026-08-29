@@ -176,7 +176,7 @@ interceptando `fetch` con un `initScript` en la navegación.
 | 13 | Sin imagen | ✅ | Marcador `Sin imagen`, proporción medida **1.5** (3:2), fondo `#E9ECF1` y texto `#5A6672`. Sin rojo, sin scroll horizontal |
 | 14 | Sin categoría | ✅ | Miga de **2** niveles, cero enlaces a `category=`, ficha declara `Sin categoría asignada` |
 | 15 | Descontinuado | ✅ | `◼ Descontinuado` con aviso, y el producto sigue visible |
-| 16 | Agotado | ✅ | `✕ Agotado` en las 10 tarjetas y aviso propio en la ficha, además del badge |
+| 16 | Agotado | ✅ | `✕ Agotado` en las 10 tarjetas y aviso propio en la ficha, además del badge. La ficha técnica dice `Sin unidades` |
 | 17 | Copiar SKU | ✅ | Portapapeles = `PRD-005`, `✓ Copiado` visible y en la región `aria-live` |
 | 18 | Móvil 360 px | ✅ | 1 columna, `scrollWidth == clientWidth`, ningún elemento desbordado, ningún control por debajo de 44 px. El detalle a 360 px tampoco desborda |
 | 19 | Teclado | ✅ | Orden = orden del DOM (marca → buscador → chips → tarjetas → paginación), cero `tabindex` positivos o negativos, `outline: 3px solid rgb(42,90,148)` en cada parada |

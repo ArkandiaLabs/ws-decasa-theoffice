@@ -150,6 +150,17 @@
             </div>
 
             <div class="flex flex-wrap items-baseline justify-between gap-2 p-3">
+              <dt class="text-ui text-text-muted">Disponibilidad</dt>
+              <dd data-testid="spec-stock" class="text-ui text-text-body">
+                @if (product.stock === 0) {
+                  Sin unidades
+                } @else {
+                  {{ product.stock }} {{ product.stock === 1 ? 'unidad' : 'unidades' }}
+                }
+              </dd>
+            </div>
+
+            <div class="flex flex-wrap items-baseline justify-between gap-2 p-3">
               <dt class="text-ui text-text-muted">Estado</dt>
               <dd data-testid="spec-status" class="text-ui text-text-body">
                 {{ product.isActive ? 'Activo' : 'Descontinuado' }}

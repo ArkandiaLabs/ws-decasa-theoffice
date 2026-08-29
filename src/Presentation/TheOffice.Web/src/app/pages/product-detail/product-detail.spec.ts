@@ -210,4 +210,29 @@ describe('ProductDetailPage', () => {
       /carrito|comprar|cotizar|agregar|añadir|IVA/i,
     );
   });
+  // El badge de tres estados no distingue 1 de 10 ni 11 de 350, y quien repone por volumen
+  // decide con esa diferencia. El numero exacto solo esta aqui, no en la tarjeta del listado.
+  it('Render_ProductInStock_ShowsTheExactQuantityInTheSpecTable', async () => {
+    const fixture = await render({ kind: 'ok', value: { ...product, stock: 120 } });
+
+    expect(dom(fixture).querySelector('[data-testid="spec-stock"]')?.textContent?.trim()).toBe(
+      '120 unidades',
+    );
+  });
+
+  it('Render_SingleUnitLeft_UsesTheSingular', async () => {
+    const fixture = await render({ kind: 'ok', value: { ...product, stock: 1 } });
+
+    expect(dom(fixture).querySelector('[data-testid="spec-stock"]')?.textContent?.trim()).toBe(
+      '1 unidad',
+    );
+  });
+
+  it('Render_OutOfStock_SaysThereAreNoUnits', async () => {
+    const fixture = await render({ kind: 'ok', value: { ...product, stock: 0 } });
+
+    expect(dom(fixture).querySelector('[data-testid="spec-stock"]')?.textContent?.trim()).toBe(
+      'Sin unidades',
+    );
+  });
 });
