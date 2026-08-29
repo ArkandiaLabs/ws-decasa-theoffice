@@ -71,6 +71,15 @@ jobs:
           key: nuget-${{ runner.os }}-${{ hashFiles('**/packages.lock.json', '**/Directory.Packages.props') }}
           restore-keys: nuget-${{ runner.os }}-
 
+      # El frontend vive fuera del .sln y sus compuertas cuelgan de `make ci`. Este paso solo pone
+      # Node en PATH con la version del .nvmrc; los comandos npm siguen viviendo en el Makefile.
+      - name: Install Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: src/Presentation/TheOffice.Web/.nvmrc
+          cache: npm
+          cache-dependency-path: src/Presentation/TheOffice.Web/package-lock.json
+
       # One definition of "the code is fine". Restating the steps here would guarantee drift the
       # first time someone adds a check to the Makefile. `make ci` restores in locked mode, so a
       # packages.lock.json that has drifted from its project fails the build - that is the point.

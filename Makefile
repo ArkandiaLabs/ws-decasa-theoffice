@@ -1,6 +1,7 @@
 SLN := src/TheOffice.sln
 API := src/Presentation/TheOffice.Api
 ARCH := tests/TheOffice.ArchitectureTests
+WEB := src/Presentation/TheOffice.Web
 
 # CI publishes test results, so the run has to produce a file. This repo runs xUnit v3 on
 # Microsoft.Testing.Platform, whose TRX reporter is `--report-xunit-trx` (NOT the VSTest
@@ -9,7 +10,8 @@ ARCH := tests/TheOffice.ArchitectureTests
 TEST_LOGGER := --report-xunit-trx
 
 .DEFAULT_GOAL := help
-.PHONY: help restore restore-locked build test arch format lint secrets audit check ci run clean hooks
+.PHONY: help restore restore-locked build test arch format lint secrets audit check ci run clean hooks \
+	web web-install web-lint web-build web-test
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -42,10 +44,25 @@ secrets: ## Scan the working tree for committed secrets
 audit: ## Report vulnerable dependencies (report only, never fails)
 	dotnet list $(SLN) package --vulnerable --include-transitive
 
-check: restore lint build test ## Single confidence signal
+web-install: ## Install frontend dependencies (locked, what CI runs)
+	npm ci --prefix $(WEB)
+
+web-lint: ## Verify frontend style
+	npm run lint --prefix $(WEB)
+
+web-build: ## Build the frontend
+	npm run build --prefix $(WEB)
+
+web-test: ## Run frontend tests (headless, single run)
+	npm run test:ci --prefix $(WEB)
+
+web: web-install web-lint web-build web-test ## Every frontend gate
+	@echo "OK - the frontend is green"
+
+check: restore lint build test web ## Single confidence signal
 	@echo "OK - the repo is green"
 
-ci: restore-locked lint build test secrets ## What the pipeline runs
+ci: restore-locked lint build test web secrets ## What the pipeline runs
 	@echo "OK - CI gates passed"
 
 run: ## Run the application

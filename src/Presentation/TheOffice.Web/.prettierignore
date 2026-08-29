@@ -1,0 +1,5 @@
+# Generado por el build o por npm; formatearlo no aporta y ensucia los diffs.
+/dist
+/.angular
+/coverage
+package-lock.json
