@@ -77,6 +77,7 @@ Además del SDK de .NET 10, el repo usa tres herramientas para sus comprobacione
 | gitleaks | `brew install gitleaks` | `winget install gitleaks` | `apt install gitleaks` en Debian trixie+ / Ubuntu 25.04+; en LTS más viejas, el binario de [releases](https://github.com/gitleaks/gitleaks/releases) |
 | Git Bash | viene con el sistema | **viene con [Git para Windows](https://gitforwindows.org/)** | viene con la distribución |
 | Node.js **≥ 22.22.3** | `brew install node` | `winget install OpenJS.NodeJS` | el paquete de la distribución |
+| pnpm | `brew install pnpm` | `winget install pnpm.pnpm` | `corepack enable pnpm` |
 
 **Git Bash importa en Windows**: los scripts de `scripts/agent-hooks/` son bash, y si Git Bash no
 está, Claude Code cae a PowerShell y los hooks **dejan de hacer nada, en silencio**. Esa fila sí es
@@ -85,9 +86,10 @@ instrumental del agente, no requisito de compilación.
 **Node ya no lo es.** Desde que el frontend Angular vive en `src/Presentation/TheOffice.Web/`,
 `make check` compila y prueba también el frontend: sin Node no hay comprobación verde. La versión
 exacta está en [`src/Presentation/TheOffice.Web/.nvmrc`](./src/Presentation/TheOffice.Web/.nvmrc)
-(`nvm use` desde esa carpeta la selecciona). El costo hay que decirlo en voz alta: **a partir de
-aquí un cambio de una línea en C# paga un `npm ci`** en cada `make check`. Es el precio de tener
-una sola señal de confianza en vez de dos que se desincronizan.
+(`nvm use` desde esa carpeta la selecciona), y el gestor de paquetes es **pnpm**, fijado en el
+campo `packageManager` de su `package.json`. El costo hay que decirlo en voz alta: **a partir de
+aquí un cambio de una línea en C# paga una instalación de dependencias** en cada `make check`. Es
+el precio de tener una sola señal de confianza en vez de dos que se desincronizan.
 
 ### Puesta en marcha
 
@@ -111,10 +113,10 @@ Desde la raíz del repositorio:
 comprobación que ejecuta la integración continua. `make help` lista el resto de objetivos; los del
 frontend llevan el prefijo `web-`.
 
-El frontend se levanta aparte, y necesita el backend corriendo:
+Para trabajar, `make dev` levanta el backend y el frontend a la vez:
 
 ```bash
-npm start --prefix src/Presentation/TheOffice.Web   # http://localhost:4200
+make dev    # levanta API y frontend juntos; un Ctrl-C apaga los dos
 ```
 
 Su propio [`README`](./src/Presentation/TheOffice.Web/README.md) tiene el detalle.

@@ -9,9 +9,10 @@ verdad. Cubre la fase 8 del [plan del frontend](./frontend-plan.md).
 Dos procesos vivos, en dos terminales:
 
 ```bash
-make run                                            # API en http://localhost:5226
-npm start --prefix src/Presentation/TheOffice.Web   # app en http://localhost:4200
+make dev    # API en http://localhost:5226 y app en http://localhost:4200
 ```
+
+O en dos terminales, con `make run` y `make web-run`.
 
 El frontend habla con `/api/v1` en su propio origen; `proxy.conf.json` lo reenvía al `5226`. Si la
 API no está arriba, todos los escenarios caen en el estado de error — que es exactamente lo que
@@ -153,7 +154,7 @@ cuentan.
 
 ## Registro de ejecución
 
-Ejecutado el **2026-08-29** con el MCP de Chrome DevTools contra `make run` + `npm start`, en
+Ejecutado el **2026-08-29** con el MCP de Chrome DevTools contra `make dev`, en
 Chrome de escritorio (1440×900) y en emulación móvil (360×800). Los estados que los datos semilla
 no producen (`stock = 0`, `isActive = false`, `category: null`, `imageUrl` vacío) se provocaron
 interceptando `fetch` con un `initScript` en la navegación.

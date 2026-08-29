@@ -44,17 +44,19 @@ secrets: ## Scan the working tree for committed secrets
 audit: ## Report vulnerable dependencies (report only, never fails)
 	dotnet list $(SLN) package --vulnerable --include-transitive
 
+# El frontend usa pnpm. `--dir` es el equivalente de `--prefix`, y `--frozen-lockfile` el de
+# `npm ci`: falla si pnpm-lock.yaml no coincide con package.json, en vez de actualizarlo callado.
 web-install: ## Install frontend dependencies (locked, what CI runs)
-	npm ci --prefix $(WEB)
+	pnpm install --dir $(WEB) --frozen-lockfile
 
 web-lint: ## Verify frontend style
-	npm run lint --prefix $(WEB)
+	pnpm --dir $(WEB) run lint
 
 web-build: ## Build the frontend
-	npm run build --prefix $(WEB)
+	pnpm --dir $(WEB) run build
 
 web-test: ## Run frontend tests (headless, single run)
-	npm run test:ci --prefix $(WEB)
+	pnpm --dir $(WEB) run test:ci
 
 web: web-install web-lint web-build web-test ## Every frontend gate
 	@echo "OK - the frontend is green"
@@ -69,7 +71,7 @@ run: ## Run the API
 	dotnet run --project $(API)
 
 web-run: ## Run the frontend dev server (needs the API up)
-	npm start --prefix $(WEB)
+	pnpm --dir $(WEB) start
 
 # Un solo Ctrl-C tiene que apagar los dos. `trap kill 0` mata el grupo de procesos entero;
 # sin el, el servidor de Angular queda huerfano ocupando el 4200 y el siguiente arranque falla.
@@ -78,7 +80,7 @@ dev: ## Run the API and the frontend together (Ctrl-C stops both)
 	@echo "Web -> http://localhost:4200"
 	@trap 'kill 0' EXIT INT TERM; \
 	  dotnet run --project $(API) & \
-	  npm start --prefix $(WEB) & \
+	  pnpm --dir $(WEB) start & \
 	  wait
 
 clean: ## Remove build artifacts

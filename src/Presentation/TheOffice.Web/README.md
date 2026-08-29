@@ -22,14 +22,23 @@ Node.js **≥ 22.22.3** — la versión exacta está en [`.nvmrc`](./.nvmrc), y 
 carpeta la selecciona. El Angular CLI 22 **rechaza** versiones anteriores; no es un aviso, es un
 error de arranque.
 
+**pnpm**, no npm. La versión está fijada en el campo `packageManager` de `package.json`, que es de
+donde la leen tanto `corepack` como el CI. `corepack enable pnpm` basta para tenerlo.
+
 ## Cómo correrlo
 
 El frontend necesita el backend arriba: sin él solo puede pintar su estado de error.
 
 ```bash
-make run                    # terminal 1, desde la raíz — API en http://localhost:5226
-npm install                 # una sola vez
-npm start                   # terminal 2 — app en http://localhost:4200
+make dev        # desde la raíz: API en :5226 y app en :4200, un Ctrl-C apaga los dos
+```
+
+O por separado, si prefieres dos terminales:
+
+```bash
+make run        # terminal 1, desde la raíz — API en http://localhost:5226
+pnpm install    # una sola vez
+pnpm start      # terminal 2 — app en http://localhost:4200
 ```
 
 El navegador nunca ve el `5226`: la app pide `/api/v1` en su propio origen y
@@ -37,20 +46,27 @@ El navegador nunca ve el `5226`: la app pide `/api/v1` en su propio origen y
 
 ## Comandos
 
-| Comando           | Qué hace                                                                |
-| ----------------- | ----------------------------------------------------------------------- |
-| `npm start`       | Servidor de desarrollo con el proxy enganchado                          |
-| `npm run build`   | Compilación de producción a `dist/`                                     |
-| `npm run test:ci` | Pruebas, una corrida, sin navegador (Vitest + jsdom)                    |
-| `npm run lint`    | ESLint + Prettier en modo verificación                                  |
-| `npm run format`  | Corrige el formato en el sitio, incluido el orden de clases de Tailwind |
+| Comando        | Qué hace                                                                |
+| -------------- | ----------------------------------------------------------------------- |
+| `pnpm start`   | Servidor de desarrollo con el proxy enganchado                          |
+| `pnpm build`   | Compilación de producción a `dist/`                                     |
+| `pnpm test:ci` | Pruebas, una corrida, sin navegador (Vitest + jsdom)                    |
+| `pnpm lint`    | ESLint + Prettier en modo verificación                                  |
+| `pnpm format`  | Corrige el formato en el sitio, incluido el orden de clases de Tailwind |
 
 Desde la raíz del repo los mismos objetivos existen con prefijo `web-` (`make web-lint`,
 `make web-build`, `make web-test`), y `make check` los corre todos. **Esa es la señal de que el
 trabajo está bien, no «compila en mi carpeta».**
 
-El costo hay que decirlo: `make check` ahora paga un `npm ci` incluso para un cambio de una línea
-en C#. Es el precio de tener una sola compuerta en vez de dos que se desincronizan.
+El costo hay que decirlo: `make check` ahora paga un `pnpm install --frozen-lockfile` incluso para
+un cambio de una línea en C#. Es el precio de tener una sola compuerta en vez de dos que se
+desincronizan.
+
+Dos cosas de pnpm que hay que saber antes de que muerdan, ambas explicadas en el archivo que las
+arregla: [`.npmrc`](./.npmrc) eleva `@angular-eslint` a la raíz de `node_modules` porque el Angular
+CLI resuelve sus builders desde ahí y no por el grafo; y `pnpm.onlyBuiltDependencies` en
+`package.json` autoriza los scripts de instalación de `esbuild` y compañía, que pnpm bloquea por
+defecto y sin los cuales el build no arranca.
 
 ## Pruebas
 

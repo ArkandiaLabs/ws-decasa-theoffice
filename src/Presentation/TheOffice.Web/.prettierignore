@@ -2,4 +2,5 @@
 /dist
 /.angular
 /coverage
-package-lock.json
+# Lo genera pnpm; formatearlo solo produce ruido en los diffs.
+pnpm-lock.yaml

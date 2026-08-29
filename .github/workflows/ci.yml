@@ -71,14 +71,23 @@ jobs:
           key: nuget-${{ runner.os }}-${{ hashFiles('**/packages.lock.json', '**/Directory.Packages.props') }}
           restore-keys: nuget-${{ runner.os }}-
 
-      # El frontend vive fuera del .sln y sus compuertas cuelgan de `make ci`. Este paso solo pone
-      # Node en PATH con la version del .nvmrc; los comandos npm siguen viviendo en el Makefile.
+      # El frontend vive fuera del .sln y sus compuertas cuelgan de `make ci`. Estos dos pasos
+      # solo ponen pnpm y Node en PATH; los comandos siguen viviendo en el Makefile.
+      #
+      # pnpm va ANTES de setup-node: `cache: pnpm` necesita el binario para preguntarle donde
+      # tiene el store. La version sale del campo `packageManager` de package.json, que es
+      # tambien el que usa la maquina de cada quien.
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          package_json_file: src/Presentation/TheOffice.Web/package.json
+
       - name: Install Node.js
         uses: actions/setup-node@v6
         with:
           node-version-file: src/Presentation/TheOffice.Web/.nvmrc
-          cache: npm
-          cache-dependency-path: src/Presentation/TheOffice.Web/package-lock.json
+          cache: pnpm
+          cache-dependency-path: src/Presentation/TheOffice.Web/pnpm-lock.yaml
 
       # One definition of "the code is fine". Restating the steps here would guarantee drift the
       # first time someone adds a check to the Makefile. `make ci` restores in locked mode, so a

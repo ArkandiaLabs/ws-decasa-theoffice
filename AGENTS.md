@@ -154,9 +154,15 @@ y el mapeo completo de tokens; aquí solo va lo que no se deduce leyendo el cód
 - **No está en `src/TheOffice.sln`** y no tiene `.csproj` envoltorio. Es **invisible** para
   `dotnet build`, `dotnet format` y las pruebas de arquitectura — que es justo lo que se busca. Toda
   su integración con las compuertas pasa por el `Makefile` (`make web-*`, y `make check` los corre).
-- **`make check` ahora exige Node** y paga un `npm ci` en cada corrida, incluso para un cambio de una
-  línea en C#. Es el costo aceptado de tener una sola señal de confianza. La versión está en
-  `src/Presentation/TheOffice.Web/.nvmrc`; el CLI **rechaza** versiones anteriores, no avisa.
+- **`make check` ahora exige Node y pnpm**, y paga una instalación de dependencias en cada corrida,
+  incluso para un cambio de una línea en C#. Es el costo aceptado de tener una sola señal de
+  confianza. La versión de Node está en `src/Presentation/TheOffice.Web/.nvmrc` y la de pnpm en el
+  campo `packageManager` de su `package.json`; el CLI **rechaza** un Node anterior, no avisa.
+- **El gestor es pnpm, y su árbol estricto muerde dos veces.** `.npmrc` eleva `@angular-eslint` a la
+  raíz de `node_modules` (el Angular CLI resuelve los builders desde ahí, no por el grafo del
+  paquete que los declara), y `pnpm.onlyBuiltDependencies` autoriza los scripts de instalación de
+  `esbuild` y compañía. Sin cualquiera de las dos cosas el repo falla en verde aparente: `lint` o
+  `build` se rompen con un mensaje que no menciona a pnpm.
 - **`pageSize` es 10 por decisión del frontend**, no el 6 que la API devuelve por defecto. Va
   explícito en cada petición.
 - **Los nombres de categoría llegan sin tildes** (`Papeleria`, `Tecnologia`). Se renderiza lo que

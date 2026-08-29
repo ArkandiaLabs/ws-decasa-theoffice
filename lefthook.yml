@@ -19,8 +19,8 @@ pre-commit:
       # El frontend es invisible para `dotnet format`: no esta en el .sln. Este comando es su
       # espejo, y falla barato aqui en vez de esperar a `make check` en pre-push.
       root: "src/Presentation/TheOffice.Web/"
-      run: npx prettier --check {staged_files}
-      fail_text: "Style: run `npm run format` in src/Presentation/TheOffice.Web and re-stage."
+      run: pnpm exec prettier --check {staged_files}
+      fail_text: "Style: run `pnpm format` in src/Presentation/TheOffice.Web and re-stage."
     secrets:
       run: gitleaks protect --staged --no-banner --redact
       fail_text: "Possible secret in the staged changes. If it is a false positive, add its fingerprint to .gitleaksignore."
