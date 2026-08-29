@@ -11,7 +11,7 @@ TEST_LOGGER := --report-xunit-trx
 
 .DEFAULT_GOAL := help
 .PHONY: help restore restore-locked build test arch format lint secrets audit check ci run clean hooks \
-	web web-install web-lint web-build web-test
+	web web-install web-lint web-build web-test web-run dev
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -65,8 +65,21 @@ check: restore lint build test web ## Single confidence signal
 ci: restore-locked lint build test web secrets ## What the pipeline runs
 	@echo "OK - CI gates passed"
 
-run: ## Run the application
+run: ## Run the API
 	dotnet run --project $(API)
+
+web-run: ## Run the frontend dev server (needs the API up)
+	npm start --prefix $(WEB)
+
+# Un solo Ctrl-C tiene que apagar los dos. `trap kill 0` mata el grupo de procesos entero;
+# sin el, el servidor de Angular queda huerfano ocupando el 4200 y el siguiente arranque falla.
+dev: ## Run the API and the frontend together (Ctrl-C stops both)
+	@echo "API -> http://localhost:5226  ·  docs en /scalar"
+	@echo "Web -> http://localhost:4200"
+	@trap 'kill 0' EXIT INT TERM; \
+	  dotnet run --project $(API) & \
+	  npm start --prefix $(WEB) & \
+	  wait
 
 clean: ## Remove build artifacts
 	dotnet clean $(SLN)
