@@ -1,0 +1,88 @@
+<header class="bg-primary-900">
+  <div class="mx-auto flex max-w-6xl items-center px-4">
+    <a class="inline-flex min-h-11 items-center font-display text-h1 text-surface" routerLink="/">
+      TheOffice
+    </a>
+  </div>
+</header>
+
+<main class="mx-auto max-w-6xl px-4 py-8">
+  <h1 class="font-display text-h1 text-primary-900">Catálogo</h1>
+
+  @if (result(); as data) {
+    <p class="mt-1 text-body text-text-body" data-testid="results-summary">
+      {{ data.totalItems }} referencias activas · orden alfabético
+    </p>
+  }
+
+  <p class="sr-only" role="status" aria-live="polite">{{ announcement() }}</p>
+
+  <div class="mt-6 max-w-xl">
+    <app-search-field [value]="term()" (term)="onTerm($event)" />
+  </div>
+
+  @if (categories().length) {
+    <div
+      class="mt-4 flex flex-wrap gap-2"
+      role="group"
+      aria-label="Filtrar por categoría"
+      data-testid="category-filters"
+    >
+      <app-category-chip
+        label="Todas"
+        [active]="!category()"
+        (picked)="onAllCategories()"
+        (cleared)="onAllCategories()"
+      />
+
+      @for (item of categories(); track item.publicId) {
+        <app-category-chip
+          [label]="item.name"
+          [active]="category() === item.slug"
+          (picked)="onCategory(item.slug)"
+          (cleared)="onAllCategories()"
+        />
+      }
+    </div>
+  }
+
+  <div class="mt-8">
+    @if (loading()) {
+      <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" data-testid="skeleton-grid">
+        @for (slot of skeletons; track slot) {
+          <app-skeleton-card />
+        }
+      </div>
+    } @else if (failed()) {
+      <app-error-state (retry)="onRetry()" />
+    } @else if (result(); as data) {
+      @if (data.items.length) {
+        <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" data-testid="product-grid">
+          @for (item of data.items; track item.publicId) {
+            <app-product-card [product]="item" />
+          }
+        </div>
+
+        <div class="mt-8">
+          <app-pagination
+            [page]="data.page"
+            [pageSize]="data.pageSize"
+            [totalItems]="data.totalItems"
+            [totalPages]="data.totalPages"
+            (pageChange)="onPage($event)"
+          />
+        </div>
+      } @else {
+        <app-empty-state
+          title="Sin resultados"
+          [message]="emptyMessage()"
+          hint="Si buscas por SKU, escríbelo completo y exacto: PRD- seguido de 3 dígitos (ej. PRD-001)."
+          primaryLabel="Limpiar filtros"
+          secondaryLabel="Ver todas las categorías"
+          (primary)="onClearFilters()"
+          (secondary)="onAllCategories()"
+        />
+      }
+    }
+  </div>
+</main>
