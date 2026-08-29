@@ -85,7 +85,7 @@ Las plantillas consumen las clases que Tailwind deriva de ellos (`bg-surface`, `
 
 De este archivo salen dos artefactos **generados, que no se editan a mano**:
 
-```
+```text
 DESIGN.md ──┬── design.md export --format dtcg ──▶ design/tokens.json   (interoperabilidad)
             └── scripts/generate-theme.mjs ──────▶ src/theme.css        (@theme de Tailwind)
 ```
@@ -129,7 +129,9 @@ Tonos tierra cálidos con **un solo acento frío**. Hay exactamente un color pri
   donde encima va `on-secondary` (blanco). **No para texto sobre crema**: ahí da 3.98:1. El texto
   atenuado usa `text-muted` (#5C544D), que da 6.15:1.
 - **Tertiary (#3B86FB):** Zafiro para el anillo de foco y algún icono de acento. **Nunca para
-  acciones primarias.** Encima va `on-tertiary` (blanco).
+  acciones primarias.** Encima va `on-tertiary` (blanco), pero ese par da **3.51:1**: sirve para un
+  icono o un borde, **no para texto**. Si hace falta un relleno con texto blanco encima, el fondo es
+  `tertiary-strong`. Es un hueco de la paleta de origen, no de este repo.
 - **Tertiary-strong (#0559DD) / Primary-strong (#875910):** Los mismos dos tonos, oscurecidos hasta
   ser legibles **como texto**. Son una adición: sobre crema, el zafiro da 2.91:1 y el ámbar
   `primary-active` 2.41:1, muy por debajo del 4.5:1 de AA. El zafiro de marca se sigue usando como

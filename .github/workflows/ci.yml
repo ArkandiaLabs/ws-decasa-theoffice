@@ -24,6 +24,11 @@ jobs:
       github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-latest
 
+    # `make ci` restaura dependencias y corre scripts del checkout: no necesita escribir nada.
+    # Sin este bloque el token hereda los permisos por defecto del repo, que pueden ser de escritura.
+    permissions:
+      contents: read
+
     steps:
       # gitleaks scans history, so it needs the full clone.
       - uses: actions/checkout@v7

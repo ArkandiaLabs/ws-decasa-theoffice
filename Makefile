@@ -28,6 +28,11 @@ WEB_ENV = if [ -s "$$HOME/.nvm/nvm.sh" ]; then \
 	  fi
 
 .DEFAULT_GOAL := help
+
+# Los objetivos de este archivo son secuencias, no un conjunto: `test` asume `build`, y
+# `web-design-classes` lee el CSS que produce `web-build`. Con `make -j` los prerequisitos
+# arrancarian a la vez y una compuerta leeria un artefacto que aun no existe.
+.NOTPARALLEL:
 .PHONY: help restore restore-locked build test arch format lint secrets audit check ci run clean hooks \
 	web web-install web-design-lint web-design-check web-design-classes web-tokens web-lint web-build web-test web-run dev
 

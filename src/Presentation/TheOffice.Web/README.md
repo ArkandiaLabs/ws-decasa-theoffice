@@ -107,7 +107,7 @@ La fuente de verdad es [`DESIGN.md`](./DESIGN.md), y sus tokens son los del **Ar
 System** — el proyecto de Claude Design del mismo nombre, cuya fuente canónica es
 `campus-prep/frontend/DESIGN.md`. De ahí salen dos archivos **generados, que no se editan a mano**:
 
-```
+```text
 DESIGN.md ──┬── design.md export --format dtcg ──▶ design/tokens.json   (interoperabilidad)
             └── scripts/generate-theme.mjs ──────▶ src/theme.css        (@theme de Tailwind)
                                                           │

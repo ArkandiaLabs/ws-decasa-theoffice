@@ -110,8 +110,9 @@ Desde la raíz del repositorio:
    make check
    ```
 
-`make check` corre estilo, compilación y pruebas del backend **y del frontend** — es la misma
-comprobación que ejecuta la integración continua. `make help` lista el resto de objetivos; los del
+`make check` corre estilo, compilación y pruebas del backend **y del frontend**: es la señal local.
+La integración continua ejecuta `make ci`, que es `make check` más restauración en modo bloqueado
+(`restore-locked`, que falla si el lock file no coincide) y el escaneo de secretos. `make help` lista el resto de objetivos; los del
 frontend llevan el prefijo `web-`.
 
 Para trabajar, `make dev` levanta el backend y el frontend a la vez:
