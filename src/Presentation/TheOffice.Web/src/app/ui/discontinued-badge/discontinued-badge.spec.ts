@@ -27,9 +27,9 @@ describe('DiscontinuedBadge', () => {
   });
 
   it('Render_Always_UsesTheDiscontinuedTokens', () => {
-    expect(badge().classList).toContain('bg-discontinued-bg');
-    expect(badge().classList).toContain('text-discontinued-fg');
-    expect(badge().classList).toContain('border-discontinued-border');
+    expect(badge().classList).toContain('bg-neutral');
+    expect(badge().classList).toContain('text-text-muted');
+    expect(badge().classList).toContain('border-border-strong');
   });
 
   it('Render_Always_KeepsTheSharedBadgeShape', () => {

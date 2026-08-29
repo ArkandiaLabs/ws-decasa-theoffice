@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-const BASE = 'inline-flex min-h-11 items-center gap-1 rounded-xl border px-3 text-ui';
-const INACTIVE = 'border-border-control bg-surface text-text-body hover:bg-surface-muted';
-const ACTIVE = 'border-primary-500 bg-primary-100 text-primary-900';
+const BASE = 'inline-flex min-h-11 items-center gap-1 rounded-sm border px-3 text-label';
+const INACTIVE = 'border-secondary bg-surface text-foreground hover:bg-neutral';
+const ACTIVE = 'border-foreground bg-foreground text-on-secondary';
 
 @Component({
   selector: 'app-category-chip',

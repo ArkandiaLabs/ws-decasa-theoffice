@@ -18,7 +18,7 @@ describe('SkeletonCard', () => {
     const fixture = TestBed.createComponent(SkeletonCard);
     await fixture.whenStable();
 
-    const blocks = fixture.nativeElement.querySelectorAll('.bg-skeleton.animate-pulse');
+    const blocks = fixture.nativeElement.querySelectorAll('.bg-border.animate-pulse');
     expect(blocks.length).toBeGreaterThan(0);
   });
 

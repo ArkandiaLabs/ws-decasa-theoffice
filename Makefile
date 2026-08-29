@@ -29,7 +29,7 @@ WEB_ENV = if [ -s "$$HOME/.nvm/nvm.sh" ]; then \
 
 .DEFAULT_GOAL := help
 .PHONY: help restore restore-locked build test arch format lint secrets audit check ci run clean hooks \
-	web web-install web-lint web-build web-test web-run dev
+	web web-install web-design-lint web-design-check web-design-classes web-tokens web-lint web-build web-test web-run dev
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -67,6 +67,20 @@ audit: ## Report vulnerable dependencies (report only, never fails)
 web-install: ## Install frontend dependencies (locked, what CI runs)
 	@cd $(WEB) && $(WEB_ENV) && pnpm install --frozen-lockfile
 
+# El sistema de diseno vive en $(WEB)/DESIGN.md: los tokens del @theme se generan desde ahi.
+web-tokens: ## Regenerate the design tokens from DESIGN.md
+	@cd $(WEB) && $(WEB_ENV) && pnpm run design:tokens
+
+web-design-lint: ## Verify DESIGN.md is structurally valid
+	@cd $(WEB) && $(WEB_ENV) && pnpm run design:lint
+
+web-design-check: ## Verify the generated tokens still match DESIGN.md
+	@cd $(WEB) && $(WEB_ENV) && pnpm run design:check
+
+# Necesita el CSS compilado: corre despues de web-build, no antes.
+web-design-classes: ## Verify the templates only use classes the design tokens generate
+	@cd $(WEB) && $(WEB_ENV) && pnpm run design:classes
+
 web-lint: ## Verify frontend style
 	@cd $(WEB) && $(WEB_ENV) && pnpm run lint
 
@@ -76,7 +90,7 @@ web-build: ## Build the frontend
 web-test: ## Run frontend tests (headless, single run)
 	@cd $(WEB) && $(WEB_ENV) && pnpm run test:ci
 
-web: web-install web-lint web-build web-test ## Every frontend gate
+web: web-install web-design-lint web-design-check web-lint web-build web-design-classes web-test ## Every frontend gate
 	@echo "OK - the frontend is green"
 
 check: restore lint build test web ## Single confidence signal

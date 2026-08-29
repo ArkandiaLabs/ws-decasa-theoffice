@@ -1,112 +1,16 @@
-/* Tipografia self-hosted: el build la empaqueta, no la pide a un CDN en tiempo de ejecucion.
-   Solo los pesos que usa el diseno; cada peso extra es una descarga que nadie mira. */
-@import '@fontsource/archivo/600.css';
-@import '@fontsource/archivo/700.css';
-@import '@fontsource/ibm-plex-sans/400.css';
-@import '@fontsource/ibm-plex-sans/500.css';
-@import '@fontsource/ibm-plex-sans/600.css';
-@import '@fontsource/ibm-plex-mono/400.css';
-@import '@fontsource/ibm-plex-mono/600.css';
+/* Tipografia self-hosted: el build la empaqueta, no la pide al CDN de Google Fonts que usa el
+   proyecto de diseno. Solo los pesos que usa la escala; cada peso extra es una descarga que
+   nadie mira. */
+@import '@fontsource/aleo/600.css';
+@import '@fontsource/aleo/700.css';
+@import '@fontsource/rubik/400.css';
+@import '@fontsource/rubik/500.css';
+@import '@fontsource/fira-code/400.css';
 
 @import 'tailwindcss';
 
-/* Los tokens del canvas, uno a uno. Si una plantilla necesita un color que no esta aqui,
-   falta un token — no se escribe el hex a mano. */
-@theme {
-  /* Paleta */
-  --color-primary-900: #10243d;
-  --color-primary-700: #1b3a61;
-  --color-primary-500: #2a5a94;
-  --color-primary-100: #e3ebf4;
-  --color-accent-600: #c2761a;
-  --color-accent-100: #f6e7d2;
-
-  --color-surface: #ffffff;
-  --color-surface-muted: #f6f7f9;
-  --color-skeleton: #e9ecf1;
-  --color-border: #dde2e8;
-  --color-border-strong: #cbd2db;
-  /* El `border-strong` del canvas da 1.5:1 sobre blanco: sirve para separar bloques, no para
-     delimitar un control. WCAG 1.4.11 pide 3:1 en el borde que identifica un control, y en un
-     input sobre fondo casi blanco el borde es lo unico que lo identifica. 3.37:1 sobre
-     `surface`, 3.14:1 sobre `surface-muted`, misma familia azul-gris. */
-  --color-border-control: #828d9b;
-
-  --color-text: #16202b;
-  --color-text-body: #3c4a59;
-  --color-text-muted: #5a6672;
-  --color-text-disabled: #98a2ae;
-  --color-text-on-primary-muted: #b9c6d6;
-
-  /* Estados de stock. Nunca se comunican solo con color: la clase acompana a un simbolo
-     y a una palabra en la plantilla. */
-  /* Confirmacion de una accion (el "Copiado" del SKU). Mismo verde que el estado disponible,
-     pero con nombre propio: no es inventario, y el dia que el inventario cambie de verde este
-     no tiene por que seguirlo. */
-  --color-success-fg: #12603d;
-
-  --color-stock-ok-bg: #e4f1e9;
-  --color-stock-ok-fg: #12603d;
-  --color-stock-ok-border: #b7dac7;
-
-  --color-stock-low-bg: #fbefd9;
-  --color-stock-low-fg: #7a4a05;
-  --color-stock-low-border: #e6c98e;
-
-  --color-stock-out-bg: #f9e6e6;
-  --color-stock-out-fg: #96201f;
-  --color-stock-out-border: #e4b3b2;
-
-  --color-discontinued-bg: #eceff3;
-  --color-discontinued-fg: #44505e;
-  --color-discontinued-border: #cbd2db;
-
-  /* Tipografia */
-  --font-display: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
-  --font-sans: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
-  --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
-
-  --text-display: 2.5rem;
-  --text-display--line-height: 1.15;
-  --text-display--font-weight: 700;
-
-  --text-h1: 1.875rem;
-  --text-h1--line-height: 1.2;
-  --text-h1--font-weight: 700;
-
-  --text-price: 1.5rem;
-  --text-price--line-height: 1.25;
-  --text-price--font-weight: 700;
-
-  --text-h3-card: 1.125rem;
-  --text-h3-card--line-height: 1.35;
-  --text-h3-card--font-weight: 600;
-
-  --text-body: 1rem;
-  --text-body--line-height: 1.55;
-  --text-body--font-weight: 400;
-
-  --text-ui: 0.875rem;
-  --text-ui--line-height: 1.4;
-  --text-ui--font-weight: 500;
-
-  --text-mono-sku: 0.8125rem;
-  --text-mono-sku--line-height: 1.3;
-  --text-mono-sku--font-weight: 600;
-
-  --text-caption: 0.75rem;
-  --text-caption--line-height: 1.4;
-  --text-caption--font-weight: 400;
-
-  /* Radios y sombras */
-  --radius-sm: 2px;
-  --radius-md: 4px;
-  --radius-lg: 6px;
-  --radius-xl: 8px;
-
-  --shadow-sm: 0 1px 2px rgb(16 36 61 / 0.06);
-  --shadow-md: 0 4px 12px rgb(16 36 61 / 0.1);
-}
+/* Colores, tipografia y radios se generan desde DESIGN.md — se editan alli, no aqui. */
+@import './theme.css';
 
 @layer base {
   html {
@@ -115,15 +19,20 @@
   }
 
   body {
-    background-color: var(--color-surface-muted);
-    color: var(--color-text);
-    font-family: var(--font-sans);
+    background-color: var(--color-neutral);
+    color: var(--color-foreground);
+    font-family: var(--font-body);
     margin: 0;
   }
 
-  /* Foco visible global. Tailwind no trae accesibilidad de teclado: es nuestra. */
+  /* Foco visible global, 2px como pide el sistema. Tailwind no trae accesibilidad de teclado. */
   :focus-visible {
-    outline: 3px solid var(--color-primary-500);
+    outline: 2px solid var(--color-focus-ring);
     outline-offset: 2px;
+  }
+
+  /* El zafiro de marca da 1.90:1 sobre el ambar del encabezado, bajo el minimo de 3:1. */
+  header :focus-visible {
+    outline-color: var(--color-tertiary-strong);
   }
 }

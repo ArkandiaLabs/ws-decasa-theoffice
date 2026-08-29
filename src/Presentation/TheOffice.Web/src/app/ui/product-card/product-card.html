@@ -1,11 +1,11 @@
-<article class="flex h-full flex-col rounded-lg border border-border bg-surface shadow-sm">
+<article class="flex h-full flex-col rounded-lg border border-border bg-surface">
   <div class="relative">
     <app-product-image [src]="product().imageUrl" [alt]="product().name" [priority]="priority()" />
 
     @if (product().categoryName) {
       <span
         data-testid="category-tag"
-        class="absolute top-2 left-2 rounded-sm bg-primary-900 px-2 py-0.5 text-caption text-surface"
+        class="absolute top-2 left-2 rounded-sm border border-border bg-neutral px-2 py-0.5 text-label text-foreground"
       >
         {{ product().categoryName }}
       </span>
@@ -13,16 +13,16 @@
   </div>
 
   <div class="flex flex-1 flex-col gap-2 p-4">
-    <p class="font-mono text-mono-sku text-text-muted">{{ product().publicId }}</p>
+    <p class="font-mono text-code text-text-muted">{{ product().publicId }}</p>
 
-    <h3 class="font-display text-h3-card break-words text-text">{{ product().name }}</h3>
+    <h3 class="font-display text-h3 break-words text-foreground">{{ product().name }}</h3>
 
-    <p class="font-display text-price text-primary-900">{{ product().price | price }}</p>
+    <p class="font-display text-h2 text-foreground">{{ product().price | price }}</p>
 
     <app-stock-badge [stock]="product().stock" />
 
     <a
-      class="mt-auto inline-flex min-h-11 items-center self-start text-ui text-primary-700 underline underline-offset-2 hover:text-primary-500"
+      class="mt-auto inline-flex min-h-11 items-center self-start text-label text-tertiary-strong underline underline-offset-2 hover:text-tertiary-strong"
       [routerLink]="['/productos', product().publicId]"
       queryParamsHandling="preserve"
       [attr.aria-label]="'Ver detalle de ' + product().name"

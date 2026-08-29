@@ -50,7 +50,7 @@ describe('Button', () => {
   it('Render_Disabled_UsesDisabledTextColorAndNeverOpacity', async () => {
     const { button } = await render({ disabled: true });
 
-    expect(button.className).toContain('text-text-disabled');
+    expect(button.className).toContain('text-text-muted');
     expect(button.className).toContain('cursor-not-allowed');
     expect(button.className).not.toContain('opacity-');
   });
@@ -58,7 +58,7 @@ describe('Button', () => {
   it('Render_PrimaryVariant_UsesThePrimaryBackground', async () => {
     const { button } = await render();
 
-    expect(button.className).toContain('bg-primary-700');
+    expect(button.className).toContain('bg-primary');
     expect(button.className).toContain('min-h-11');
   });
 

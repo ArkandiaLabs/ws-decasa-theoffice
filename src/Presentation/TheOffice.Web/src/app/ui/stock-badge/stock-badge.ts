@@ -28,7 +28,7 @@ export class StockBadge {
       return {
         symbol: '●',
         label: 'Disponible',
-        classes: 'bg-stock-ok-bg text-stock-ok-fg border-stock-ok-border',
+        classes: 'bg-neutral text-text-muted border-border',
       };
     }
 
@@ -36,14 +36,14 @@ export class StockBadge {
       return {
         symbol: '▲',
         label: 'Quedan pocas',
-        classes: 'bg-stock-low-bg text-stock-low-fg border-stock-low-border',
+        classes: 'bg-neutral text-primary-strong border-primary',
       };
     }
 
     return {
       symbol: '✕',
       label: 'Agotado',
-      classes: 'bg-stock-out-bg text-stock-out-fg border-stock-out-border',
+      classes: 'bg-neutral text-destructive border-destructive',
     };
   });
 }

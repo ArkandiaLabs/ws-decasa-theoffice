@@ -35,7 +35,7 @@ describe('ProductImage', () => {
     expect(image()).toBeNull();
     expect(placeholder()?.textContent?.trim()).toBe('Sin imagen');
     expect(placeholder()?.classList).toContain('text-text-muted');
-    expect(placeholder()?.classList).toContain('text-caption');
+    expect(placeholder()?.classList).toContain('text-label');
   });
 
   it('Render_BlankSrc_ShowsThePlaceholder', async () => {
@@ -62,14 +62,14 @@ describe('ProductImage', () => {
 
     expect(container().classList).toContain('aspect-3/2');
     expect(container().classList).toContain('overflow-hidden');
-    expect(container().classList).toContain('bg-skeleton');
+    expect(container().classList).toContain('bg-border');
   });
 
   it('Render_EmptySrc_KeepsTheThreeByTwoRatio', async () => {
     await render('');
 
     expect(container().classList).toContain('aspect-3/2');
-    expect(container().classList).toContain('bg-skeleton');
+    expect(container().classList).toContain('bg-border');
   });
 
   it('ImageError_BrokenSrc_FallsBackToThePlaceholder', async () => {

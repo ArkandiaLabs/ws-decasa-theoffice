@@ -47,7 +47,7 @@ describe('CategoryChip', () => {
 
     expect(button.getAttribute('aria-label')).toBe('Quitar filtro de Mobiliario');
     expect(button.textContent).toContain('✕');
-    expect(button.className).toContain('bg-primary-100');
+    expect(button.className).toContain('bg-foreground');
   });
 
   it('Render_InactiveFilterChip_HasNoRemoveMarkAndNoAriaLabel', async () => {

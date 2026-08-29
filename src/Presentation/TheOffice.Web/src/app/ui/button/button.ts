@@ -2,12 +2,12 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 
 type ButtonVariant = 'primary' | 'secondary' | 'text';
 
-const BASE = 'inline-flex min-h-11 items-center justify-center rounded-md px-4 text-ui';
+const BASE = 'inline-flex min-h-11 items-center justify-center rounded-sm px-4 text-label';
 
 const ENABLED: Record<ButtonVariant, string> = {
-  primary: 'bg-primary-700 text-surface hover:bg-primary-500',
-  secondary: 'bg-surface-muted text-text-body border border-border-control hover:bg-primary-100',
-  text: 'text-primary-700 underline underline-offset-2 hover:text-primary-500',
+  primary: 'bg-primary text-on-primary hover:bg-primary-hover active:bg-primary-active',
+  secondary: 'bg-neutral text-foreground border border-secondary hover:bg-border',
+  text: 'text-tertiary-strong underline underline-offset-2 hover:text-tertiary-strong',
 };
 
 /**
@@ -15,9 +15,9 @@ const ENABLED: Record<ButtonVariant, string> = {
  * atenua tambien el fondo y deja el contraste por debajo del minimo AA.
  */
 const DISABLED: Record<ButtonVariant, string> = {
-  primary: 'cursor-not-allowed border border-border bg-surface-muted text-text-disabled',
-  secondary: 'cursor-not-allowed border border-border bg-surface-muted text-text-disabled',
-  text: 'cursor-not-allowed text-text-disabled',
+  primary: 'cursor-not-allowed border border-border bg-neutral text-text-muted',
+  secondary: 'cursor-not-allowed border border-border bg-neutral text-text-muted',
+  text: 'cursor-not-allowed text-text-muted',
 };
 
 @Component({

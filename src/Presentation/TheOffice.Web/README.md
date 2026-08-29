@@ -50,17 +50,21 @@ El navegador nunca ve el `5226`: la app pide `/api/v1` en su propio origen y
 
 ## Comandos
 
-| Comando        | Qué hace                                                                |
-| -------------- | ----------------------------------------------------------------------- |
-| `pnpm start`   | Servidor de desarrollo con el proxy enganchado                          |
-| `pnpm build`   | Compilación de producción a `dist/`                                     |
-| `pnpm test:ci` | Pruebas, una corrida, sin navegador (Vitest + jsdom)                    |
-| `pnpm lint`    | ESLint + Prettier en modo verificación                                  |
-| `pnpm format`  | Corrige el formato en el sitio, incluido el orden de clases de Tailwind |
+| Comando               | Qué hace                                                                |
+| --------------------- | ----------------------------------------------------------------------- |
+| `pnpm start`          | Servidor de desarrollo con el proxy enganchado                          |
+| `pnpm build`          | Compilación de producción a `dist/`                                     |
+| `pnpm test:ci`        | Pruebas, una corrida, sin navegador (Vitest + jsdom)                    |
+| `pnpm lint`           | ESLint + Prettier en modo verificación                                  |
+| `pnpm format`         | Corrige el formato en el sitio, incluido el orden de clases de Tailwind |
+| `pnpm design:tokens`  | Regenera los tokens desde [`DESIGN.md`](./DESIGN.md)                    |
+| `pnpm design:lint`    | Valida la estructura de `DESIGN.md`                                     |
+| `pnpm design:check`   | Falla si los tokens generados divergen de `DESIGN.md`                   |
+| `pnpm design:classes` | Falla si una plantilla usa una clase que los tokens no generan          |
 
 Desde la raíz del repo los mismos objetivos existen con prefijo `web-` (`make web-lint`,
-`make web-build`, `make web-test`), y `make check` los corre todos. **Esa es la señal de que el
-trabajo está bien, no «compila en mi carpeta».**
+`make web-build`, `make web-test`, `make web-tokens`, `make web-design-check`), y `make check` los
+corre todos. **Esa es la señal de que el trabajo está bien, no «compila en mi carpeta».**
 
 El costo hay que decirlo: `make check` ahora paga un `pnpm install --frozen-lockfile` incluso para
 un cambio de una línea en C#. Es el precio de tener una sola compuerta en vez de dos que se
@@ -87,56 +91,120 @@ Chrome DevTools —queda registrado en el PR #7— y hay que repetirlo al tocar 
 
 ## Estilos: Tailwind v4, y nada más
 
-Sin Angular Material, sin PrimeNG, sin CSS-in-JS. La identidad visual viene del canvas de diseño, y
-un framework de componentes con su propio lenguaje visual se pelea con ella en cada control.
+Sin Angular Material, sin PrimeNG, sin CSS-in-JS. La identidad visual la fija
+[`DESIGN.md`](./DESIGN.md), y un framework de componentes con su propio lenguaje visual se pelea con
+ella en cada control.
 
 El costo de esa decisión es que **la accesibilidad de teclado, los roles ARIA y el manejo de foco
 son nuestros**. El foco visible es global, en `styles.css`; no se redefine por componente.
 
-Tailwind v4 no usa `tailwind.config.js`: la configuración es el bloque `@theme` de
-[`src/styles.css`](./src/styles.css), y el build lo procesa vía
-[`.postcssrc.json`](./.postcssrc.json).
+Tailwind v4 no usa `tailwind.config.js`: la configuración es el bloque `@theme`, y el build lo
+procesa vía [`.postcssrc.json`](./.postcssrc.json).
+
+### De dónde salen los tokens
+
+La fuente de verdad es [`DESIGN.md`](./DESIGN.md), y sus tokens son los del **Arkandia Design
+System** — el proyecto de Claude Design del mismo nombre, cuya fuente canónica es
+`campus-prep/frontend/DESIGN.md`. De ahí salen dos archivos **generados, que no se editan a mano**:
+
+```
+DESIGN.md ──┬── design.md export --format dtcg ──▶ design/tokens.json   (interoperabilidad)
+            └── scripts/generate-theme.mjs ──────▶ src/theme.css        (@theme de Tailwind)
+                                                          │
+                                     check-classes.mjs ───┴──▶ las plantillas
+```
+
+**Las dos mitades tienen compuerta.** `design:check` cubre `DESIGN.md → CSS`; `design:classes`
+cubre `CSS → plantillas`, que es por donde se colaron los dos únicos fallos reales de este sistema.
+Tailwind emite toda clase que reconoce, así que «usada en la plantilla pero ausente del CSS
+compilado» solo puede significar que no la reconoció — y no falla, simplemente no genera nada.
+El check necesita el CSS compilado, así que corre **después** de `web-build`. Además vigila que
+`theme.css` no declare `--spacing-*`, el namespace que ensombrece la escala de contenedores.
+
+[`src/styles.css`](./src/styles.css) importa el generado y se queda con lo que no es token: las
+fuentes de `@fontsource` y la capa base con el foco visible.
+
+Tocar el sistema de diseño son tres pasos: editas `DESIGN.md`, corres `make web-tokens` y commiteas
+los tres archivos. `make web-design-check` regenera y compara — **no usa git**, así que dice la
+verdad en cualquier estado del árbol — y `make check` lo corre.
+
+Tres cosas que conviene saber antes de que sorprendan:
+
+- **El export DTCG de `@google/design.md` v0.4.0 descarta `lineHeight`.** Por eso el generador lee
+  `DESIGN.md` y no `design/tokens.json`: aquí cada nivel de la escala trae su interlineado.
+- **No hay tokens de elevación en el formato**, y tampoco hacen falta: el sistema es plano a
+  propósito. No hay `shadow-*` y no se agregan.
+- **El sistema de origen usa el CDN de Google Fonts**; aquí las tres familias van self-hosted con
+  `@fontsource`, por la regla del repo de no colgar la identidad de la red del usuario.
 
 ### Mapeo de los tokens del diseño
 
-Los nombres del canvas son los nombres de las clases. **Cero valores arbitrarios**
-(`bg-[#f4f4f5]`): si falta un color, falta un token — se agrega al `@theme`, no a la plantilla.
+Los nombres de los tokens son los nombres de las clases. **Cero valores arbitrarios**
+(`bg-[#f4f4f5]`): si falta un color, falta un token — se agrega a `DESIGN.md`, no a la plantilla.
 
-| Token del diseño           | Variable en `@theme`                        | Clases que genera                                          |
-| -------------------------- | ------------------------------------------- | ---------------------------------------------------------- |
-| `primary-900` `#10243D`    | `--color-primary-900`                       | `bg-primary-900`, `text-primary-900`, `border-primary-900` |
-| `primary-700` `#1B3A61`    | `--color-primary-700`                       | botones primarios, enlaces                                 |
-| `primary-500` `#2A5A94`    | `--color-primary-500`                       | foco, hover                                                |
-| `primary-100` `#E3EBF4`    | `--color-primary-100`                       | chip de categoría activo                                   |
-| `accent-600` `#C2761A`     | `--color-accent-600`                        | acentos de marca                                           |
-| `accent-100` `#F6E7D2`     | `--color-accent-100`                        | avisos suaves                                              |
-| `surface` `#FFFFFF`        | `--color-surface`                           | `bg-surface`                                               |
-| `surface-muted` `#F6F7F9`  | `--color-surface-muted`                     | fondo de página, botón secundario                          |
-| `skeleton` `#E9ECF1`       | `--color-skeleton`                          | skeletons y marcador «sin imagen»                          |
-| `border` / `border-strong` | `--color-border` / `--color-border-strong`  | `border-border`, `border-border-strong`                    |
-| `text` `#16202B`           | `--color-text`                              | **`text-text`** (el token se llama `text`)                 |
-| `text-body` `#3C4A59`      | `--color-text-body`                         | `text-text-body`                                           |
-| `text-muted` `#5A6672`     | `--color-text-muted`                        | `text-text-muted`                                          |
-| `text-disabled` `#98A2AE`  | `--color-text-disabled`                     | botón deshabilitado — **no se usa opacidad**               |
-| `text-on-primary-muted`    | `--color-text-on-primary-muted`             | texto sobre el header oscuro                               |
-| Estados de stock           | `--color-stock-{ok,low,out}-{bg,fg,border}` | `bg-stock-ok-bg`, `text-stock-ok-fg`, …                    |
-| Descontinuado              | `--color-discontinued-{bg,fg,border}`       | solo en el detalle                                         |
+| Token del diseño             | Clases que genera                                           |
+| ---------------------------- | ----------------------------------------------------------- |
+| `primary` `#FBB03B`          | la banda del encabezado, y una acción por pantalla          |
+| `primary-hover` / `-active`  | `hover:bg-primary-hover`, `active:bg-primary-active`        |
+| `primary-strong` `#875910`   | el ámbar **legible como texto** (existencias bajas)         |
+| `primary-disabled` `#FBD68B` | el ámbar inerte (hoy sin uso)                               |
+| `on-primary` `#000000`       | `text-on-primary` — tinta negra sobre el ámbar, no blanco   |
+| `secondary` `#78716C`        | `border-secondary` — el filete del control. **No es texto** |
+| `tertiary` `#3B86FB`         | relleno de acento y anillo de foco                          |
+| `tertiary-strong` `#0559DD`  | `text-tertiary-strong` — los enlaces                        |
+| `neutral` `#FEFAF6`          | pergamino: fondo de página y chips de estado                |
+| `surface` `#F1E9DA`          | crema: tarjetas y bloques agrupados                         |
+| `surface-raised` `#FFFFFF`   | blanco: los inputs                                          |
+| `foreground` `#000000`       | tinta del texto, y el chip de categoría activo              |
+| `text-muted` `#5C544D`       | **`text-text-muted`** — todo el texto atenuado              |
+| `text-faint` `#8A827A`       | solo no-texto: da 3.13:1 sobre crema                        |
+| `border` / `border-strong`   | filetes cálidos; `bg-border` rellena esqueletos             |
+| `destructive` `#991B1B`      | agotado y avisos de error                                   |
 
-Tipografía — self-hosted con `@fontsource`, importada desde `styles.css`. Nada de CDN: la identidad
-de marca no debe colgar de la red del usuario.
+Los estados de inventario **no tienen tokens propios**: chip `neutral` con filete, y cambia la
+tinta — `foreground` disponible, `primary-active` stock bajo, `destructive` agotado, `secondary`
+descontinuado.
 
-| Familia       | Variable         | Clase          | Uso               |
-| ------------- | ---------------- | -------------- | ----------------- |
-| Archivo       | `--font-display` | `font-display` | títulos y precios |
-| IBM Plex Sans | `--font-sans`    | `font-sans`    | cuerpo y UI       |
-| IBM Plex Mono | `--font-mono`    | `font-mono`    | SKU y datos       |
+Tipografía — self-hosted con `@fontsource`. Cada nivel trae familia, tamaño, interlineado y grosor,
+así que `font-display text-h1` resuelve el bloque completo.
 
-Escala de texto — cada tamaño trae ya su interlineado y su grosor:
-`text-display` (40/700) · `text-h1` (30/700) · `text-price` (24/700) · `text-h3-card` (18/600) ·
-`text-body` (16/400) · `text-ui` (14/500) · `text-mono-sku` (13/600) · `text-caption` (12/400).
+| Nivel     | Familia   | Clases                   | Uso                                   |
+| --------- | --------- | ------------------------ | ------------------------------------- |
+| `h1`      | Aleo      | `font-display text-h1`   | título de página y nombre en la ficha |
+| `h2`      | Aleo      | `font-display text-h2`   | precio, wordmark, títulos de sección  |
+| `h3`      | Aleo      | `font-display text-h3`   | nombre del producto en la tarjeta     |
+| `body`    | Rubik     | `font-body text-body`    | descripción y prosa larga             |
+| `label`   | Rubik     | `font-body text-label`   | botones, chips, metadatos, input      |
+| `caption` | Rubik     | `font-body text-caption` | texto de apoyo                        |
+| `code`    | Fira Code | `font-mono text-code`    | el SKU (`PRD-001`) e identificadores  |
 
-Radios `rounded-sm|md|lg|xl` (2/4/6/8 px) y sombras `shadow-sm` / `shadow-md`. La escala de
-espaciado base-4 del diseño ya es la de Tailwind; no hace falta redefinirla.
+Radios `rounded-sm|md|lg` (3/6/12 px) — **sin píldoras**. El espaciado del diseño
+(4/8/16/32/64 px) ya es la escala base-4 de Tailwind, así que se usa en forma numérica (`p-4`) y el
+generador no lo emite como `--spacing-*`: hacerlo ensombrece la escala de contenedores y deja
+`max-w-xl` en 64 px sin que nada lo reporte — un fallo que solo se ve en el navegador.
+
+**Adiciones y desviaciones frente al sistema de origen**, todas anotadas en `DESIGN.md`:
+
+| Qué                         | Por qué                                                                                       |
+| --------------------------- | --------------------------------------------------------------------------------------------- |
+| `surface-raised` `#FFFFFF`  | Su navbar y su input pintan `#fff`, pero su paleta no nombra el blanco (`surface` es crema).  |
+| `tertiary-strong` `#0559DD` | El zafiro de marca da **2.91:1** como texto sobre crema. Mismo tono, oscurecido hasta 5.00:1. |
+| `primary-strong` `#875910`  | El `primary-active` da **2.41:1** como texto. Mismo tono, 5.02:1.                             |
+| Apagado sin `opacity-50`    | La opacidad atenúa también el fondo y tumba el contraste. Aquí se apaga con color y cursor.   |
+| Filete `secondary`          | `border` sobre pergamino da 1.15:1, lejos del 3:1 de WCAG 1.4.11 para el borde de un control. |
+
+Vale la pena subir las tres adiciones al proyecto de Claude Design.
+
+**El encabezado ámbar es decisión de este producto**, no del sistema de origen, donde el ámbar es
+solo de acción. La regla de «una sola ámbar por pantalla» se mantiene para los **controles**. Sobre
+esa banda el anillo de foco usa `tertiary-strong`: el zafiro de marca da 1.90:1 encima, bajo el
+mínimo de 3:1. Es la única excepción al foco global y vive en `styles.css`, no por componente.
+
+**Una trampa del namespace de Tailwind:** los tokens `text-muted` y `text-faint` generan las clases
+`text-text-muted` y `text-text-faint`. Escribir `text-muted` a secas **no falla**: cae en el
+namespace de tamaños de fuente, no genera nada, y el elemento hereda el color del padre. Fue
+exactamente así como el chip «Disponible» terminó en negro sin que build, lint ni pruebas dijeran
+nada.
 
 ## Reglas no obvias
 

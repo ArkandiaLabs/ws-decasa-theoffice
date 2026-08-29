@@ -4,3 +4,6 @@
 /coverage
 # Lo genera pnpm; formatearlo solo produce ruido en los diffs.
 pnpm-lock.yaml
+# Los genera `make web-tokens` desde DESIGN.md; formatearlos los sacaria de sincronia.
+/design/tokens.json
+/src/theme.css

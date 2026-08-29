@@ -1,4 +1,4 @@
-<div class="aspect-3/2 w-full overflow-hidden bg-skeleton" [class]="radius()">
+<div class="aspect-3/2 w-full overflow-hidden bg-border" [class]="radius()">
   @if (hasImage()) {
     <img
       class="h-full w-full object-cover"
@@ -8,7 +8,7 @@
       (error)="onError()"
     />
   } @else {
-    <div class="flex h-full w-full items-center justify-center text-caption text-text-muted">
+    <div class="flex h-full w-full items-center justify-center text-label text-text-muted">
       Sin imagen
     </div>
   }

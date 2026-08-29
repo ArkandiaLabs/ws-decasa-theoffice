@@ -8,6 +8,11 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "test:ci": "ng test --watch=false",
+    "design:lint": "design.md lint DESIGN.md",
+    "design:export": "design.md export --format dtcg DESIGN.md > design/tokens.json",
+    "design:tokens": "pnpm design:export && node scripts/generate-theme.mjs",
+    "design:check": "design.md export --format dtcg DESIGN.md | diff -u design/tokens.json - && node scripts/generate-theme.mjs --check",
+    "design:classes": "node scripts/check-classes.mjs",
     "lint": "ng lint && prettier --check .",
     "format": "prettier --write ."
   },
@@ -20,9 +25,9 @@
     "@angular/forms": "^22.1.0",
     "@angular/platform-browser": "^22.1.0",
     "@angular/router": "^22.1.0",
-    "@fontsource/archivo": "^5.3.0",
-    "@fontsource/ibm-plex-mono": "^5.3.0",
-    "@fontsource/ibm-plex-sans": "^5.3.0",
+    "@fontsource/aleo": "^5.3.0",
+    "@fontsource/fira-code": "^5.3.0",
+    "@fontsource/rubik": "^5.3.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },
@@ -31,6 +36,7 @@
     "@angular/cli": "^22.1.6",
     "@angular/compiler-cli": "^22.1.0",
     "@eslint/js": "^10.0.1",
+    "@google/design.md": "0.4.0",
     "@tailwindcss/postcss": "^4.3.3",
     "angular-eslint": "22.1.0",
     "eslint": "^10.6.0",
@@ -42,7 +48,8 @@
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.2",
     "typescript-eslint": "8.62.1",
-    "vitest": "^4.0.8"
+    "vitest": "^4.0.8",
+    "yaml": "^2.9.0"
   },
   "engines": {
     "node": ">=22.22.3"
