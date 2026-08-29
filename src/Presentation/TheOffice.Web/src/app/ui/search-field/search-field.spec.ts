@@ -56,15 +56,36 @@ describe('SearchField', () => {
   });
 
   it('Type_SameValueTwice_EmitsTermOnlyOnce', async () => {
-    const { input, emitted } = await render();
+    const { fixture, input, emitted } = await render();
     vi.useFakeTimers();
 
     type(input, 'resma');
     vi.advanceTimersByTime(300);
+    // Lo que hace el consumidor: el termino emitido vuelve como `value` desde la URL.
+    fixture.componentRef.setInput('value', 'resma');
+
     type(input, 'resma');
     vi.advanceTimersByTime(300);
 
     expect(emitted).toEqual(['resma']);
+  });
+
+  it('Type_SameTermAfterTheValueWasClearedFromOutside_EmitsTermAgain', async () => {
+    const { fixture, input, emitted } = await render();
+    vi.useFakeTimers();
+
+    type(input, 'resma');
+    vi.advanceTimersByTime(300);
+    expect(emitted).toEqual(['resma']);
+
+    // Lo que hace "Limpiar filtros": la URL pierde el termino y baja como `value`.
+    fixture.componentRef.setInput('value', 'resma');
+    fixture.componentRef.setInput('value', '');
+
+    type(input, 'resma');
+    vi.advanceTimersByTime(300);
+
+    expect(emitted).toEqual(['resma', 'resma']);
   });
 
   it('Render_WithInitialValue_ShowsItInTheInput', async () => {
