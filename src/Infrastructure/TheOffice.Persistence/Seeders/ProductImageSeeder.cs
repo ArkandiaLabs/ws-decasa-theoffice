@@ -55,7 +55,8 @@ public static class ProductImageSeeder
       // Serie propia: nunca colisiona con la de Product (b0000000-...).
       Id = Guid.Parse($"b1000000-0000-4000-8000-{index:D12}"),
       PublicId = $"{product.PublicId}-IMG-{number}",
-      Url = $"https://placehold.co/600x400/png?text={Uri.EscapeDataString(label)}",
+      // Los marcadores van en los tonos calidos del sistema: el gris por defecto choca con la ficha.
+      Url = $"https://placehold.co/600x400/E5E0D6/78716C/png?text={Uri.EscapeDataString(label)}",
       // El repositorio ordena por IsPrimary, luego SortOrder, luego PublicId.
       SortOrder = number - 1,
       IsPrimary = number == 1,
