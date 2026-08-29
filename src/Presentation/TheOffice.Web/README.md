@@ -1,59 +1,133 @@
-# TheOfficeWeb
+# TheOffice — Frontend del catálogo
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.1.6.
+Angular del catálogo B2B. Dos pantallas de **solo lectura**: el listado (`/` y `/productos`) y la
+ficha de un producto (`/productos/:publicId`, donde `publicId` es el SKU, `PRD-001`).
 
-## Development server
+No hay carrito, ni pedidos, ni autenticación, ni backoffice. No es un recorte temporal: son
+[huecos deliberados del roadmap](../../../AGENTS.md).
 
-To start a local development server, run:
+## Por qué vive aquí
 
-```bash
-ng serve
-```
+`src/` se organiza por capas de arquitectura limpia, y un frontend **es** capa de presentación. No
+está dentro de `TheOffice.Api/ClientApp/` porque la API **no sirve la SPA**: `Program.cs` configura
+CORS por origen, es decir, los frontends viven en otro dominio.
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Tampoco está en `src/TheOffice.sln`, ni tiene un `.csproj` envoltorio. Es un proyecto Node
+independiente y por tanto **invisible** para `dotnet build`, `dotnet format` y las pruebas de
+arquitectura. Su integración con las compuertas del repo pasa entera por el `Makefile`.
 
-## Code scaffolding
+## Requisitos
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+Node.js **≥ 22.22.3** — la versión exacta está en [`.nvmrc`](./.nvmrc), y `nvm use` desde esta
+carpeta la selecciona. El Angular CLI 22 **rechaza** versiones anteriores; no es un aviso, es un
+error de arranque.
 
-```bash
-ng generate component component-name
-```
+## Cómo correrlo
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
+El frontend necesita el backend arriba: sin él solo puede pintar su estado de error.
 
 ```bash
-ng build
+make run                    # terminal 1, desde la raíz — API en http://localhost:5226
+npm install                 # una sola vez
+npm start                   # terminal 2 — app en http://localhost:4200
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+El navegador nunca ve el `5226`: la app pide `/api/v1` en su propio origen y
+[`proxy.conf.json`](./proxy.conf.json) lo reenvía. **Cero URLs absolutas de API en el código.**
 
-## Running unit tests
+## Comandos
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+| Comando           | Qué hace                                                                |
+| ----------------- | ----------------------------------------------------------------------- |
+| `npm start`       | Servidor de desarrollo con el proxy enganchado                          |
+| `npm run build`   | Compilación de producción a `dist/`                                     |
+| `npm run test:ci` | Pruebas, una corrida, sin navegador (Vitest + jsdom)                    |
+| `npm run lint`    | ESLint + Prettier en modo verificación                                  |
+| `npm run format`  | Corrige el formato en el sitio, incluido el orden de clases de Tailwind |
 
-```bash
-ng test
-```
+Desde la raíz del repo los mismos objetivos existen con prefijo `web-` (`make web-lint`,
+`make web-build`, `make web-test`), y `make check` los corre todos. **Esa es la señal de que el
+trabajo está bien, no «compila en mi carpeta».**
 
-## Running end-to-end tests
+El costo hay que decirlo: `make check` ahora paga un `npm ci` incluso para un cambio de una línea
+en C#. Es el precio de tener una sola compuerta en vez de dos que se desincronizan.
 
-For end-to-end (e2e) testing, run:
+## Pruebas
 
-```bash
-ng e2e
-```
+Vitest con jsdom — **sin navegador**, para que CI no dependa de tener Chrome instalado. Los nombres
+siguen la convención del repo: inglés, `Method_Scenario_ExpectedResult`.
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+Lo que cubren las unitarias y lo que no: el `CatalogService` prueba el `404` y la API caída; los
+componentes prueban los estados que **los datos semilla no producen** (`stock = 0`,
+`isActive = false`, `category: null`, `imageUrl` vacío). El recorrido de la app real está en
+[`docs/plans/frontend-validation-script.md`](../../../docs/plans/frontend-validation-script.md),
+que se ejecuta con el MCP de Chrome DevTools.
 
-## Additional Resources
+## Estilos: Tailwind v4, y nada más
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Sin Angular Material, sin PrimeNG, sin CSS-in-JS. La identidad visual viene del canvas de diseño, y
+un framework de componentes con su propio lenguaje visual se pelea con ella en cada control.
+
+El costo de esa decisión es que **la accesibilidad de teclado, los roles ARIA y el manejo de foco
+son nuestros**. El foco visible es global, en `styles.css`; no se redefine por componente.
+
+Tailwind v4 no usa `tailwind.config.js`: la configuración es el bloque `@theme` de
+[`src/styles.css`](./src/styles.css), y el build lo procesa vía
+[`.postcssrc.json`](./.postcssrc.json).
+
+### Mapeo de los tokens del diseño
+
+Los nombres del canvas son los nombres de las clases. **Cero valores arbitrarios**
+(`bg-[#f4f4f5]`): si falta un color, falta un token — se agrega al `@theme`, no a la plantilla.
+
+| Token del diseño           | Variable en `@theme`                        | Clases que genera                                          |
+| -------------------------- | ------------------------------------------- | ---------------------------------------------------------- |
+| `primary-900` `#10243D`    | `--color-primary-900`                       | `bg-primary-900`, `text-primary-900`, `border-primary-900` |
+| `primary-700` `#1B3A61`    | `--color-primary-700`                       | botones primarios, enlaces                                 |
+| `primary-500` `#2A5A94`    | `--color-primary-500`                       | foco, hover                                                |
+| `primary-100` `#E3EBF4`    | `--color-primary-100`                       | chip de categoría activo                                   |
+| `accent-600` `#C2761A`     | `--color-accent-600`                        | acentos de marca                                           |
+| `accent-100` `#F6E7D2`     | `--color-accent-100`                        | avisos suaves                                              |
+| `surface` `#FFFFFF`        | `--color-surface`                           | `bg-surface`                                               |
+| `surface-muted` `#F6F7F9`  | `--color-surface-muted`                     | fondo de página, botón secundario                          |
+| `skeleton` `#E9ECF1`       | `--color-skeleton`                          | skeletons y marcador «sin imagen»                          |
+| `border` / `border-strong` | `--color-border` / `--color-border-strong`  | `border-border`, `border-border-strong`                    |
+| `text` `#16202B`           | `--color-text`                              | **`text-text`** (el token se llama `text`)                 |
+| `text-body` `#3C4A59`      | `--color-text-body`                         | `text-text-body`                                           |
+| `text-muted` `#5A6672`     | `--color-text-muted`                        | `text-text-muted`                                          |
+| `text-disabled` `#98A2AE`  | `--color-text-disabled`                     | botón deshabilitado — **no se usa opacidad**               |
+| `text-on-primary-muted`    | `--color-text-on-primary-muted`             | texto sobre el header oscuro                               |
+| Estados de stock           | `--color-stock-{ok,low,out}-{bg,fg,border}` | `bg-stock-ok-bg`, `text-stock-ok-fg`, …                    |
+| Descontinuado              | `--color-discontinued-{bg,fg,border}`       | solo en el detalle                                         |
+
+Tipografía — self-hosted con `@fontsource`, importada desde `styles.css`. Nada de CDN: la identidad
+de marca no debe colgar de la red del usuario.
+
+| Familia       | Variable         | Clase          | Uso               |
+| ------------- | ---------------- | -------------- | ----------------- |
+| Archivo       | `--font-display` | `font-display` | títulos y precios |
+| IBM Plex Sans | `--font-sans`    | `font-sans`    | cuerpo y UI       |
+| IBM Plex Mono | `--font-mono`    | `font-mono`    | SKU y datos       |
+
+Escala de texto — cada tamaño trae ya su interlineado y su grosor:
+`text-display` (40/700) · `text-h1` (30/700) · `text-price` (24/700) · `text-h3-card` (18/600) ·
+`text-body` (16/400) · `text-ui` (14/500) · `text-mono-sku` (13/600) · `text-caption` (12/400).
+
+Radios `rounded-sm|md|lg|xl` (2/4/6/8 px) y sombras `shadow-sm` / `shadow-md`. La escala de
+espaciado base-4 del diseño ya es la de Tailwind; no hace falta redefinirla.
+
+## Reglas no obvias
+
+- **`pageSize` es 10 por decisión del frontend**, no el 6 que devuelve el servidor por defecto. Va
+  explícito en cada petición, como constante `PAGE_SIZE` en `catalog.service.ts`.
+- **La búsqueda por SKU (`^PRD-\d{3}$` → navegar al detalle) vive solo en el cliente.** La API no
+  tiene ese comportamiento y no se le va a pedir.
+- **Los nombres de categoría llegan sin tildes** (`Papeleria`, `Tecnologia`, `Organizacion`). Se
+  renderiza lo que llega: **no se «corrige» en el frontend**.
+- **Los fallos son valores, no excepciones.** `CatalogService` devuelve `Fetched<T>` con tres
+  desenlaces (`ok` / `not-found` / `error`), igual que el Result pattern del backend. La pantalla
+  **nunca** muestra un código HTTP.
+- **`totalPages` se usa, no se recalcula**: lo calcula el servidor.
+- **La descripción es texto plano.** Nunca `innerHTML`.
+- `OnPush` en todo componente, `inject()` en vez de constructor, `input()`/`output()` como
+  funciones, control flow `@if`/`@for`/`@empty`.

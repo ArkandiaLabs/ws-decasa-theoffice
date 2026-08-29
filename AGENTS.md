@@ -1,6 +1,6 @@
 # AGENTS.md — TheOffice
 
-Ecommerce B2B de artículos de oficina. Hoy solo existe el **backend del catálogo** (`src/`): API REST de productos, categorías y clientes. Frontend, carrito/pedidos, backoffice y autenticación **no están construidos** — no asumas que existen.
+Ecommerce B2B de artículos de oficina. Hoy existen el **backend del catálogo** (`src/`): API REST de productos, categorías y clientes, y el **frontend del catálogo** (`src/Presentation/TheOffice.Web`): dos pantallas Angular de solo lectura. Carrito/pedidos, backoffice y autenticación **no están construidos** — no asumas que existen.
 
 Guía para agentes de IA que trabajan en este repositorio. Sigue la convención [agents.md](https://agents.md).
 
@@ -15,6 +15,7 @@ Este archivo solo captura lo que no es obvio leyendo el código. Para arquitectu
 - [`docs/business.md`](./docs/business.md) — qué es el producto y quién paga.
 - [`docs/target-user.md`](./docs/target-user.md) — quién lo usa y qué le importa.
 - [`docs/adrs/`](./docs/adrs/) — por qué las cosas son como son.
+- [`src/Presentation/TheOffice.Web/README.md`](./src/Presentation/TheOffice.Web/README.md) — el frontend Angular: cómo correrlo, y el mapeo de tokens del diseño a Tailwind.
 - [`docs/claims-ledger.md`](./docs/claims-ledger.md) — qué de estos docs está verificado contra el repo.
 - [`README.md`](./README.md) — doc preexistente: endpoints, stack y las decisiones de implementación originales.
 
@@ -143,6 +144,36 @@ xUnit v3 + NSubstitute, con las aserciones nativas de `Assert` (los DTOs de resp
 `tests/TheOffice.ArchitectureTests` es la excepción a la regla de un proyecto de pruebas por proyecto bajo prueba: no prueba una capa, sino la relación entre todas. Usa ArchUnitNET y convierte la regla de dependencias de [arquitectura](./docs/architecture.md) en una prueba que se pone en rojo. `make test` lo corre junto con el resto; `make arch` lo corre solo.
 
 Un cambio se considera listo cuando tiene **pruebas unitarias de la capa Application y pruebas de integración** para repositorios y controllers. Hoy hay unitarias de `ProductService` y las de arquitectura; la integración (`WebApplicationFactory`, SQLite in-memory) aún no está montada y `Program.cs` no expone `public partial class Program`, que haría falta. Ver [`docs/dotnet.md`](./docs/dotnet.md) §7 y §12.
+
+## Frontend (`src/Presentation/TheOffice.Web`)
+
+Angular 22 + Tailwind v4. Dos pantallas de solo lectura: listado (`/`, `/productos`) y ficha
+(`/productos/:publicId`). Su [`README`](./src/Presentation/TheOffice.Web/README.md) tiene el detalle
+y el mapeo completo de tokens; aquí solo va lo que no se deduce leyendo el código.
+
+- **No está en `src/TheOffice.sln`** y no tiene `.csproj` envoltorio. Es **invisible** para
+  `dotnet build`, `dotnet format` y las pruebas de arquitectura — que es justo lo que se busca. Toda
+  su integración con las compuertas pasa por el `Makefile` (`make web-*`, y `make check` los corre).
+- **`make check` ahora exige Node** y paga un `npm ci` en cada corrida, incluso para un cambio de una
+  línea en C#. Es el costo aceptado de tener una sola señal de confianza. La versión está en
+  `src/Presentation/TheOffice.Web/.nvmrc`; el CLI **rechaza** versiones anteriores, no avisa.
+- **`pageSize` es 10 por decisión del frontend**, no el 6 que la API devuelve por defecto. Va
+  explícito en cada petición.
+- **Los nombres de categoría llegan sin tildes** (`Papeleria`, `Tecnologia`). Se renderiza lo que
+  llega: no se "corrige" en el cliente.
+- **La búsqueda por SKU** (`^PRD-\d{3}$` → navegar a la ficha) **vive solo en el cliente.** La API no
+  la tiene y no se le va a pedir.
+- **Cero valores arbitrarios de Tailwind** (`bg-[#…]`): si falta un color, falta un token en el
+  bloque `@theme` de `src/styles.css`. Tailwind v4 no usa `tailwind.config.js`.
+- **Los fallos son valores, no excepciones**: `CatalogService` devuelve `Fetched<T>`
+  (`ok` / `not-found` / `error`), mismo criterio que el Result pattern del backend. La pantalla
+  nunca muestra un código HTTP.
+- **Los huecos deliberados también aplican aquí**: sin carrito, sin autenticación, sin i18n, sin
+  selector de ordenamiento, sin contadores por categoría, ninguna mención a IVA. Si el diseño lo
+  pide, está fuera de alcance.
+- Las pruebas corren con **Vitest sin navegador**, para que CI no dependa de Chrome. El recorrido
+  contra la app real está en
+  [`docs/plans/frontend-validation-script.md`](./docs/plans/frontend-validation-script.md).
 
 ## Estilo de código
 
