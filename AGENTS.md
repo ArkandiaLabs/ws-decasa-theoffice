@@ -177,9 +177,11 @@ y el mapeo completo de tokens; aquí solo va lo que no se deduce leyendo el cód
 - **Los huecos deliberados también aplican aquí**: sin carrito, sin autenticación, sin i18n, sin
   selector de ordenamiento, sin contadores por categoría, ninguna mención a IVA. Si el diseño lo
   pide, está fuera de alcance.
-- Las pruebas corren con **Vitest sin navegador**, para que CI no dependa de Chrome. El recorrido
-  contra la app real está en
-  [`docs/plans/frontend-validation-script.md`](./docs/plans/frontend-validation-script.md).
+- Las pruebas corren con **Vitest sin navegador**, para que CI no dependa de Chrome. Eso deja un
+  hueco que hay que conocer: nada de lo que se rompe **solo en un navegador de verdad** — el foco
+  visible, el desbordamiento a 360 px, un prompt que deja colgado al servidor — lo ve `make check`.
+  Ese recorrido se hizo a mano con el MCP de Chrome DevTools y quedó en el PR #7; si tocas las
+  pantallas, repítelo.
 
 ## Estilo de código
 

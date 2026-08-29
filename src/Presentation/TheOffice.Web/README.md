@@ -79,9 +79,11 @@ siguen la convención del repo: inglés, `Method_Scenario_ExpectedResult`.
 
 Lo que cubren las unitarias y lo que no: el `CatalogService` prueba el `404` y la API caída; los
 componentes prueban los estados que **los datos semilla no producen** (`stock = 0`,
-`isActive = false`, `category: null`, `imageUrl` vacío). El recorrido de la app real está en
-[`docs/plans/frontend-validation-script.md`](../../../docs/plans/frontend-validation-script.md),
-que se ejecuta con el MCP de Chrome DevTools.
+`isActive = false`, `category: null`, `imageUrl` vacío).
+
+Lo que **no** cubren: todo lo que solo se rompe en un navegador real. El foco visible, el
+desbordamiento a 360 px, el zoom al 200 %, la consola limpia. Eso se recorrió a mano con el MCP de
+Chrome DevTools —queda registrado en el PR #7— y hay que repetirlo al tocar las pantallas.
 
 ## Estilos: Tailwind v4, y nada más
 
