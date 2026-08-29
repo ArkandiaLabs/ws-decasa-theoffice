@@ -15,6 +15,11 @@ export class ProductImage {
   readonly src = input.required<string>();
   readonly alt = input.required<string>();
   readonly size = input<'card' | 'detail'>('card');
+  /**
+   * `loading="lazy"` en la imagen que resulta ser el LCP retrasa la primera pintura y Angular lo
+   * avisa con NG0913. Las de la primera fila y la del detalle se piden en `eager`.
+   */
+  readonly priority = input(false);
 
   // Se reinicia cuando cambia la URL: una imagen rota no debe condenar a la siguiente.
   private readonly failed = linkedSignal<string, boolean>({
@@ -26,6 +31,10 @@ export class ProductImage {
 
   protected readonly radius = computed(() =>
     this.size() === 'detail' ? 'rounded-lg' : 'rounded-md',
+  );
+
+  protected readonly loading = computed(() =>
+    this.priority() || this.size() === 'detail' ? 'eager' : 'lazy',
   );
 
   protected onError(): void {

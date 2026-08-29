@@ -1,17 +1,11 @@
-<header class="bg-primary-900">
-  <div class="mx-auto flex max-w-6xl items-center px-4">
-    <a class="inline-flex min-h-11 items-center font-display text-h1 text-surface" routerLink="/">
-      TheOffice
-    </a>
-  </div>
-</header>
-
 <main class="mx-auto max-w-6xl px-4 py-8">
   <h1 class="font-display text-h1 text-primary-900">Catálogo</h1>
 
   @if (result(); as data) {
     <p class="mt-1 text-body text-text-body" data-testid="results-summary">
-      {{ data.totalItems }} referencias activas · orden alfabético
+      {{ data.totalItems }}
+      {{ data.totalItems === 1 ? 'referencia activa' : 'referencias activas' }}
+      · orden alfabético
     </p>
   }
 
@@ -28,11 +22,13 @@
       aria-label="Filtrar por categoría"
       data-testid="category-filters"
     >
+      <!-- "Todas" es el estado sin filtro, no un filtro puesto: se marca activo pero no se
+           puede quitar, porque no hay nada que quitar. -->
       <app-category-chip
         label="Todas"
         [active]="!category()"
+        [clearable]="false"
         (picked)="onAllCategories()"
-        (cleared)="onAllCategories()"
       />
 
       @for (item of categories(); track item.publicId) {
@@ -59,7 +55,7 @@
       @if (data.items.length) {
         <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" data-testid="product-grid">
           @for (item of data.items; track item.publicId) {
-            <app-product-card [product]="item" />
+            <app-product-card [product]="item" [priority]="$index < 3" />
           }
         </div>
 

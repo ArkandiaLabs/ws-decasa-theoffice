@@ -2,7 +2,7 @@ import { registerLocaleData } from '@angular/common';
 import localeEsCo from '@angular/common/locales/es-CO';
 import { LOCALE_ID } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 
 import { ProductListItem } from '../../catalog/catalog.models';
 import { ProductCard } from './product-card';
@@ -33,7 +33,14 @@ describe('ProductCard', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ProductCard],
-      providers: [provideRouter([]), { provide: LOCALE_ID, useValue: 'es-CO' }],
+      providers: [
+        // Rutas reales minimas: el `href` que produce RouterLink depende de que la ruta exista.
+        provideRouter([
+          { path: 'productos', children: [] },
+          { path: 'productos/:publicId', children: [] },
+        ]),
+        { provide: LOCALE_ID, useValue: 'es-CO' },
+      ],
     }).compileComponents();
   });
 
@@ -81,5 +88,31 @@ describe('ProductCard', () => {
     const link: HTMLAnchorElement = fixture.nativeElement.querySelector('a');
     expect(link.getAttribute('href')).toBe('/productos/PRD-001');
     expect(link.textContent.trim()).toBe('Ver detalle →');
+  });
+  // El enlace del detalle arrastra los filtros del listado. Sin esto, entrar a una ficha desde
+  // la pagina 2 y volver deja al comprador en la pagina 1, buscando de nuevo donde estaba.
+  it('Render_ListWithActiveFilters_KeepsThemInTheDetailLink', async () => {
+    const router = TestBed.inject(Router);
+    await router.navigateByUrl('/productos?page=2&category=papeleria');
+    const fixture = await render(baseProduct);
+    const link = fixture.nativeElement.querySelector('a[href*="/productos/PRD-001"]');
+
+    expect(link.getAttribute('href')).toContain('page=2');
+    expect(link.getAttribute('href')).toContain('category=papeleria');
+  });
+
+  it('Render_PriorityCard_AsksForTheImageEagerly', async () => {
+    const fixture = TestBed.createComponent(ProductCard);
+    fixture.componentRef.setInput('product', baseProduct);
+    fixture.componentRef.setInput('priority', true);
+    await fixture.whenStable();
+
+    expect(fixture.nativeElement.querySelector('img').getAttribute('loading')).toBe('eager');
+  });
+
+  it('Render_NonPriorityCard_DefersTheImage', async () => {
+    const fixture = await render(baseProduct);
+
+    expect(fixture.nativeElement.querySelector('img').getAttribute('loading')).toBe('lazy');
   });
 });

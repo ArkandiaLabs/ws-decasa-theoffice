@@ -26,6 +26,11 @@
   --color-skeleton: #e9ecf1;
   --color-border: #dde2e8;
   --color-border-strong: #cbd2db;
+  /* El `border-strong` del canvas da 1.5:1 sobre blanco: sirve para separar bloques, no para
+     delimitar un control. WCAG 1.4.11 pide 3:1 en el borde que identifica un control, y en un
+     input sobre fondo casi blanco el borde es lo unico que lo identifica. 3.37:1 sobre
+     `surface`, 3.14:1 sobre `surface-muted`, misma familia azul-gris. */
+  --color-border-control: #828d9b;
 
   --color-text: #16202b;
   --color-text-body: #3c4a59;
@@ -35,6 +40,11 @@
 
   /* Estados de stock. Nunca se comunican solo con color: la clase acompana a un simbolo
      y a una palabra en la plantilla. */
+  /* Confirmacion de una accion (el "Copiado" del SKU). Mismo verde que el estado disponible,
+     pero con nombre propio: no es inventario, y el dia que el inventario cambie de verde este
+     no tiene por que seguirlo. */
+  --color-success-fg: #12603d;
+
   --color-stock-ok-bg: #e4f1e9;
   --color-stock-ok-fg: #12603d;
   --color-stock-ok-border: #b7dac7;

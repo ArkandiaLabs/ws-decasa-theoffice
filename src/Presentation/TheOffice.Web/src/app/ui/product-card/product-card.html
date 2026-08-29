@@ -1,6 +1,6 @@
 <article class="flex h-full flex-col rounded-lg border border-border bg-surface shadow-sm">
   <div class="relative">
-    <app-product-image [src]="product().imageUrl" [alt]="product().name" />
+    <app-product-image [src]="product().imageUrl" [alt]="product().name" [priority]="priority()" />
 
     @if (product().categoryName) {
       <span
@@ -24,6 +24,7 @@
     <a
       class="mt-auto inline-flex min-h-11 items-center self-start text-ui text-primary-700 underline underline-offset-2 hover:text-primary-500"
       [routerLink]="['/productos', product().publicId]"
+      queryParamsHandling="preserve"
       [attr.aria-label]="'Ver detalle de ' + product().name"
     >
       Ver detalle →

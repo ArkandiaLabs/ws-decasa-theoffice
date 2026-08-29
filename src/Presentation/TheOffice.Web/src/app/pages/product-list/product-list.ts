@@ -7,7 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, convertToParamMap, Params, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, Params, Router } from '@angular/router';
 import { map } from 'rxjs';
 
 import { Category, PagedResult, ProductListItem, ProductQuery } from '../../catalog/catalog.models';
@@ -40,7 +40,6 @@ type ListState =
 @Component({
   selector: 'app-product-list',
   imports: [
-    RouterLink,
     CategoryChip,
     EmptyState,
     ErrorState,

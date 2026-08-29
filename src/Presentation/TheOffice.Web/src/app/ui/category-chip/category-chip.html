@@ -3,7 +3,7 @@
 } @else {
   <button type="button" [class]="classes()" [attr.aria-label]="ariaLabel()" (click)="onClick()">
     <span>{{ label() }}</span>
-    @if (active()) {
+    @if (removable()) {
       <span aria-hidden="true">✕</span>
     }
   </button>

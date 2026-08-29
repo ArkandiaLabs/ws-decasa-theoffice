@@ -1,3 +1,13 @@
-<div class="min-h-screen bg-surface-muted font-sans text-body text-text">
+<div class="flex min-h-screen flex-col bg-surface-muted font-sans text-body text-text">
+  <!-- La marca vive en el shell y no en el listado: una ficha de producto sin cabecera parece
+       una pagina rota, y el enlace de vuelta a la raiz tiene que existir en las dos pantallas. -->
+  <header class="bg-primary-900">
+    <div class="mx-auto flex max-w-6xl items-center px-4">
+      <a class="inline-flex min-h-11 items-center font-display text-h1 text-surface" routerLink="/">
+        TheOffice
+      </a>
+    </div>
+  </header>
+
   <router-outlet />
 </div>

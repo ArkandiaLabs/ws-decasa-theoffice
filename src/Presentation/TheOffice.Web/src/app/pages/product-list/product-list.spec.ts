@@ -281,12 +281,4 @@ describe('ProductList', () => {
     expect(router.url).toBe('/productos?page=2');
     expect(lastQuery(catalog).page).toBe(2);
   });
-
-  it('Render_Always_ShowsTheBrandHeaderLinkedToTheRoot', async () => {
-    const { host } = await render();
-    const brand = host.querySelector('header a') as HTMLAnchorElement;
-
-    expect(brand.textContent?.trim()).toBe('TheOffice');
-    expect(brand.getAttribute('href')).toBe('/');
-  });
 });

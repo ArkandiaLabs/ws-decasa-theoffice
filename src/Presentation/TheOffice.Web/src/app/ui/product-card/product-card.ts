@@ -18,4 +18,6 @@ import { StockBadge } from '../stock-badge/stock-badge';
 })
 export class ProductCard {
   readonly product = input.required<ProductListItem>();
+  /** La primera fila de la grilla; su imagen suele ser el LCP. */
+  readonly priority = input(false);
 }

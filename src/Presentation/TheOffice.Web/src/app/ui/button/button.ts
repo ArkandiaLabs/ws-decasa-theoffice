@@ -6,7 +6,7 @@ const BASE = 'inline-flex min-h-11 items-center justify-center rounded-md px-4 t
 
 const ENABLED: Record<ButtonVariant, string> = {
   primary: 'bg-primary-700 text-surface hover:bg-primary-500',
-  secondary: 'bg-surface-muted text-text-body border border-border-strong hover:bg-primary-100',
+  secondary: 'bg-surface-muted text-text-body border border-border-control hover:bg-primary-100',
   text: 'text-primary-700 underline underline-offset-2 hover:text-primary-500',
 };
 

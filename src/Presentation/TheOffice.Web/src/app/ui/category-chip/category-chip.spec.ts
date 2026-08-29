@@ -79,4 +79,33 @@ describe('CategoryChip', () => {
     const anchor = host.querySelector('a') as HTMLAnchorElement;
     expect(anchor.getAttribute('href')).toBe('/productos');
   });
+  // El chip "Todas" es el estado sin filtro: marcarlo como quitable ofrece una accion que no
+  // hace nada, y el lector de pantalla la anuncia como si la hiciera.
+  it('Render_ActiveButNotClearable_HidesTheRemoveAffordance', async () => {
+    const fixture = TestBed.createComponent(CategoryChip);
+    fixture.componentRef.setInput('label', 'Todas');
+    fixture.componentRef.setInput('active', true);
+    fixture.componentRef.setInput('clearable', false);
+    await fixture.whenStable();
+    const button = fixture.nativeElement.querySelector('button');
+
+    expect(button.textContent).not.toContain('✕');
+    expect(button.getAttribute('aria-label')).toBeNull();
+  });
+
+  it('Click_ActiveButNotClearable_EmitsNothing', async () => {
+    const fixture = TestBed.createComponent(CategoryChip);
+    fixture.componentRef.setInput('label', 'Todas');
+    fixture.componentRef.setInput('active', true);
+    fixture.componentRef.setInput('clearable', false);
+    await fixture.whenStable();
+    let emitted = 0;
+    fixture.componentInstance.cleared.subscribe(() => (emitted += 1));
+    fixture.componentInstance.picked.subscribe(() => (emitted += 1));
+
+    fixture.nativeElement.querySelector('button').click();
+    await fixture.whenStable();
+
+    expect(emitted).toBe(0);
+  });
 });

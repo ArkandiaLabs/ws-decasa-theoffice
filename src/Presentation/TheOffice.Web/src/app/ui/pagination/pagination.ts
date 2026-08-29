@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 
 const CONTROL =
   'inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border px-3 text-ui';
-const ENABLED = 'border-border-strong bg-surface text-text-body hover:bg-surface-muted';
+const ENABLED = 'border-border-control bg-surface text-text-body hover:bg-surface-muted';
 const CURRENT = 'border-primary-700 bg-primary-700 text-surface';
 const DISABLED = 'cursor-not-allowed border-border bg-surface-muted text-text-disabled';
 
