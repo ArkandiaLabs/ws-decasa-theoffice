@@ -20,10 +20,14 @@ arquitectura. Su integración con las compuertas del repo pasa entera por el `Ma
 
 Node.js **≥ 22.22.3** — la versión exacta está en [`.nvmrc`](./.nvmrc), y `nvm use` desde esta
 carpeta la selecciona. El Angular CLI 22 **rechaza** versiones anteriores; no es un aviso, es un
-error de arranque.
+error de arranque — por eso los objetivos `make web-*` hacen el `nvm use` ellos mismos, y no hay
+que acordarse de nada al abrir una terminal nueva. Si trabajas con `pnpm` directamente desde esta
+carpeta, ahí sí tienes que haber hecho `nvm use`.
 
 **pnpm**, no npm. La versión está fijada en el campo `packageManager` de `package.json`, que es de
-donde la leen tanto `corepack` como el CI. `corepack enable pnpm` basta para tenerlo.
+donde la leen tanto `corepack` como el CI. `corepack enable pnpm` basta para tenerlo, y el
+`Makefile` lo hace solo si falta: pnpm se instala **por versión de Node**, así que cambiar de
+versión lo deja fuera del PATH.
 
 ## Cómo correrlo
 

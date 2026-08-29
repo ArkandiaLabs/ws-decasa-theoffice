@@ -86,8 +86,9 @@ instrumental del agente, no requisito de compilación.
 **Node ya no lo es.** Desde que el frontend Angular vive en `src/Presentation/TheOffice.Web/`,
 `make check` compila y prueba también el frontend: sin Node no hay comprobación verde. La versión
 exacta está en [`src/Presentation/TheOffice.Web/.nvmrc`](./src/Presentation/TheOffice.Web/.nvmrc)
-(`nvm use` desde esa carpeta la selecciona), y el gestor de paquetes es **pnpm**, fijado en el
-campo `packageManager` de su `package.json`. El costo hay que decirlo en voz alta: **a partir de
+y **el `Makefile` la selecciona solo** con `nvm` si lo tienes instalado — no hace falta acordarse
+de `nvm use`. El gestor de paquetes es **pnpm**, fijado en el campo `packageManager` de su
+`package.json`; si falta para esa versión de Node, el `Makefile` lo repone con `corepack`. El costo hay que decirlo en voz alta: **a partir de
 aquí un cambio de una línea en C# paga una instalación de dependencias** en cada `make check`. Es
 el precio de tener una sola señal de confianza en vez de dos que se desincronizan.
 

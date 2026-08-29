@@ -1,3 +1,7 @@
+# nvm y corepack son funciones/scripts de bash. Con el `/bin/sh` que make usa por defecto,
+# `. nvm.sh` no define nada y el arreglo de version de Node de abajo seria inerte.
+SHELL := /bin/bash
+
 SLN := src/TheOffice.sln
 API := src/Presentation/TheOffice.Api
 ARCH := tests/TheOffice.ArchitectureTests
@@ -8,6 +12,20 @@ WEB := src/Presentation/TheOffice.Web
 # `--logger trx`, and not the platform-generic `--report-trx`, which this runner rejects).
 # Output lands in <project>/bin/<config>/<tfm>/TestResults/*.trx.
 TEST_LOGGER := --report-xunit-trx
+
+# El Angular CLI 22 RECHAZA un Node anterior al del .nvmrc: no es un aviso, es un error de
+# arranque. Y pnpm se instala por version de Node, asi que cambiar de version puede dejarlo
+# fuera del PATH. Estas dos lineas se ejecutan dentro de $(WEB) antes de cada comando del
+# frontend para que `make dev` y `make check` funcionen en una terminal recien abierta, sin
+# tener que acordarse de `nvm use`.
+#
+# Todo esta condicionado a que nvm exista: en CI no esta, el runner ya trae la version correcta
+# y estas lineas no hacen nada.
+WEB_ENV = if [ -s "$$HOME/.nvm/nvm.sh" ]; then \
+	    . "$$HOME/.nvm/nvm.sh"; \
+	    nvm use --silent 2>/dev/null || nvm install; \
+	    command -v pnpm >/dev/null 2>&1 || COREPACK_ENABLE_DOWNLOAD_PROMPT=0 corepack enable pnpm; \
+	  fi
 
 .DEFAULT_GOAL := help
 .PHONY: help restore restore-locked build test arch format lint secrets audit check ci run clean hooks \
@@ -47,16 +65,16 @@ audit: ## Report vulnerable dependencies (report only, never fails)
 # El frontend usa pnpm. `--dir` es el equivalente de `--prefix`, y `--frozen-lockfile` el de
 # `npm ci`: falla si pnpm-lock.yaml no coincide con package.json, en vez de actualizarlo callado.
 web-install: ## Install frontend dependencies (locked, what CI runs)
-	pnpm install --dir $(WEB) --frozen-lockfile
+	@cd $(WEB) && $(WEB_ENV) && pnpm install --frozen-lockfile
 
 web-lint: ## Verify frontend style
-	pnpm --dir $(WEB) run lint
+	@cd $(WEB) && $(WEB_ENV) && pnpm run lint
 
 web-build: ## Build the frontend
-	pnpm --dir $(WEB) run build
+	@cd $(WEB) && $(WEB_ENV) && pnpm run build
 
 web-test: ## Run frontend tests (headless, single run)
-	pnpm --dir $(WEB) run test:ci
+	@cd $(WEB) && $(WEB_ENV) && pnpm run test:ci
 
 web: web-install web-lint web-build web-test ## Every frontend gate
 	@echo "OK - the frontend is green"
@@ -71,16 +89,21 @@ run: ## Run the API
 	dotnet run --project $(API)
 
 web-run: ## Run the frontend dev server (needs the API up)
-	pnpm --dir $(WEB) start
+	@cd $(WEB) && $(WEB_ENV) && pnpm start
 
 # Un solo Ctrl-C tiene que apagar los dos. `trap kill 0` mata el grupo de procesos entero;
 # sin el, el servidor de Angular queda huerfano ocupando el 4200 y el siguiente arranque falla.
+#
+# Si uno de los dos muere al arrancar, el otro tiene que caer con el. Cada rama termina en su
+# propio `kill 0`, en vez de `wait -n`: el bash de macOS es 3.2 y no conoce esa opcion.
+# Con un `wait` a secas, un frontend caido dejaba la API viva y su fallo se perdia entre los
+# logs de la API — que es exactamente como se descubrio esto.
 dev: ## Run the API and the frontend together (Ctrl-C stops both)
 	@echo "API -> http://localhost:5226  ·  docs en /scalar"
 	@echo "Web -> http://localhost:4200"
 	@trap 'kill 0' EXIT INT TERM; \
-	  dotnet run --project $(API) & \
-	  pnpm --dir $(WEB) start & \
+	  ( dotnet run --project $(API); kill 0 ) & \
+	  ( cd $(WEB) && $(WEB_ENV) && pnpm start; kill 0 ) & \
 	  wait
 
 clean: ## Remove build artifacts
