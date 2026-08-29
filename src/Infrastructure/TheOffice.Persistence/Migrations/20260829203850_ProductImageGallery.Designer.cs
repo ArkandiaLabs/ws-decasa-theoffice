@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TheOffice.Persistence;
 
@@ -10,9 +11,11 @@ using TheOffice.Persistence;
 namespace TheOffice.Persistence.Migrations
 {
     [DbContext(typeof(TheOfficeDbContext))]
-    partial class TheOfficeDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260829203850_ProductImageGallery")]
+    partial class ProductImageGallery
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.10");
@@ -409,7 +412,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000001"),
                             PublicId = "PRD-001-IMG-1",
                             SortOrder = 0,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Resma%20de%20papel%20carta%2075g"
+                            Url = "https://placehold.co/600x400/png?text=Resma%20de%20papel%20carta%2075g"
                         },
                         new
                         {
@@ -418,7 +421,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000001"),
                             PublicId = "PRD-001-IMG-2",
                             SortOrder = 1,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Resma%20de%20papel%20carta%2075g%20-%20detalle"
+                            Url = "https://placehold.co/600x400/png?text=Resma%20de%20papel%20carta%2075g%20-%20detalle"
                         },
                         new
                         {
@@ -427,7 +430,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000001"),
                             PublicId = "PRD-001-IMG-3",
                             SortOrder = 2,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Resma%20de%20papel%20carta%2075g%20-%20en%20uso"
+                            Url = "https://placehold.co/600x400/png?text=Resma%20de%20papel%20carta%2075g%20-%20en%20uso"
                         },
                         new
                         {
@@ -436,7 +439,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000002"),
                             PublicId = "PRD-002-IMG-1",
                             SortOrder = 0,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Cuaderno%20argollado%20100%20hojas"
+                            Url = "https://placehold.co/600x400/png?text=Cuaderno%20argollado%20100%20hojas"
                         },
                         new
                         {
@@ -445,7 +448,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000002"),
                             PublicId = "PRD-002-IMG-2",
                             SortOrder = 1,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Cuaderno%20argollado%20100%20hojas%20-%20detalle"
+                            Url = "https://placehold.co/600x400/png?text=Cuaderno%20argollado%20100%20hojas%20-%20detalle"
                         },
                         new
                         {
@@ -454,7 +457,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000002"),
                             PublicId = "PRD-002-IMG-3",
                             SortOrder = 2,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Cuaderno%20argollado%20100%20hojas%20-%20en%20uso"
+                            Url = "https://placehold.co/600x400/png?text=Cuaderno%20argollado%20100%20hojas%20-%20en%20uso"
                         },
                         new
                         {
@@ -463,7 +466,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000003"),
                             PublicId = "PRD-003-IMG-1",
                             SortOrder = 0,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Boligrafo%20tinta%20negra%20x12"
+                            Url = "https://placehold.co/600x400/png?text=Boligrafo%20tinta%20negra%20x12"
                         },
                         new
                         {
@@ -472,7 +475,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000004"),
                             PublicId = "PRD-004-IMG-1",
                             SortOrder = 0,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Marcador%20borrable%20x4"
+                            Url = "https://placehold.co/600x400/png?text=Marcador%20borrable%20x4"
                         },
                         new
                         {
@@ -481,7 +484,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000004"),
                             PublicId = "PRD-004-IMG-2",
                             SortOrder = 1,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Marcador%20borrable%20x4%20-%20detalle"
+                            Url = "https://placehold.co/600x400/png?text=Marcador%20borrable%20x4%20-%20detalle"
                         },
                         new
                         {
@@ -490,7 +493,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000004"),
                             PublicId = "PRD-004-IMG-3",
                             SortOrder = 2,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Marcador%20borrable%20x4%20-%20en%20uso"
+                            Url = "https://placehold.co/600x400/png?text=Marcador%20borrable%20x4%20-%20en%20uso"
                         },
                         new
                         {
@@ -499,7 +502,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000005"),
                             PublicId = "PRD-005-IMG-1",
                             SortOrder = 0,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Silla%20ergonomica%20con%20soporte%20lumbar"
+                            Url = "https://placehold.co/600x400/png?text=Silla%20ergonomica%20con%20soporte%20lumbar"
                         },
                         new
                         {
@@ -508,7 +511,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000005"),
                             PublicId = "PRD-005-IMG-2",
                             SortOrder = 1,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Silla%20ergonomica%20con%20soporte%20lumbar%20-%20detalle"
+                            Url = "https://placehold.co/600x400/png?text=Silla%20ergonomica%20con%20soporte%20lumbar%20-%20detalle"
                         },
                         new
                         {
@@ -517,7 +520,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000005"),
                             PublicId = "PRD-005-IMG-3",
                             SortOrder = 2,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Silla%20ergonomica%20con%20soporte%20lumbar%20-%20en%20uso"
+                            Url = "https://placehold.co/600x400/png?text=Silla%20ergonomica%20con%20soporte%20lumbar%20-%20en%20uso"
                         },
                         new
                         {
@@ -526,7 +529,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000005"),
                             PublicId = "PRD-005-IMG-4",
                             SortOrder = 3,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Silla%20ergonomica%20con%20soporte%20lumbar%20-%20empaque"
+                            Url = "https://placehold.co/600x400/png?text=Silla%20ergonomica%20con%20soporte%20lumbar%20-%20empaque"
                         },
                         new
                         {
@@ -535,7 +538,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000006"),
                             PublicId = "PRD-006-IMG-1",
                             SortOrder = 0,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Escritorio%20en%20L%20150%20cm"
+                            Url = "https://placehold.co/600x400/png?text=Escritorio%20en%20L%20150%20cm"
                         },
                         new
                         {
@@ -544,7 +547,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000006"),
                             PublicId = "PRD-006-IMG-2",
                             SortOrder = 1,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Escritorio%20en%20L%20150%20cm%20-%20detalle"
+                            Url = "https://placehold.co/600x400/png?text=Escritorio%20en%20L%20150%20cm%20-%20detalle"
                         },
                         new
                         {
@@ -553,7 +556,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000006"),
                             PublicId = "PRD-006-IMG-3",
                             SortOrder = 2,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Escritorio%20en%20L%20150%20cm%20-%20en%20uso"
+                            Url = "https://placehold.co/600x400/png?text=Escritorio%20en%20L%20150%20cm%20-%20en%20uso"
                         },
                         new
                         {
@@ -562,7 +565,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000007"),
                             PublicId = "PRD-007-IMG-1",
                             SortOrder = 0,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Archivador%20metalico%204%20gavetas"
+                            Url = "https://placehold.co/600x400/png?text=Archivador%20metalico%204%20gavetas"
                         },
                         new
                         {
@@ -571,7 +574,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000007"),
                             PublicId = "PRD-007-IMG-2",
                             SortOrder = 1,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Archivador%20metalico%204%20gavetas%20-%20detalle"
+                            Url = "https://placehold.co/600x400/png?text=Archivador%20metalico%204%20gavetas%20-%20detalle"
                         },
                         new
                         {
@@ -580,7 +583,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000007"),
                             PublicId = "PRD-007-IMG-3",
                             SortOrder = 2,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Archivador%20metalico%204%20gavetas%20-%20en%20uso"
+                            Url = "https://placehold.co/600x400/png?text=Archivador%20metalico%204%20gavetas%20-%20en%20uso"
                         },
                         new
                         {
@@ -589,7 +592,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000008"),
                             PublicId = "PRD-008-IMG-1",
                             SortOrder = 0,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Cajonera%20rodante%203%20gavetas"
+                            Url = "https://placehold.co/600x400/png?text=Cajonera%20rodante%203%20gavetas"
                         },
                         new
                         {
@@ -598,7 +601,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000008"),
                             PublicId = "PRD-008-IMG-2",
                             SortOrder = 1,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Cajonera%20rodante%203%20gavetas%20-%20detalle"
+                            Url = "https://placehold.co/600x400/png?text=Cajonera%20rodante%203%20gavetas%20-%20detalle"
                         },
                         new
                         {
@@ -607,7 +610,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000008"),
                             PublicId = "PRD-008-IMG-3",
                             SortOrder = 2,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Cajonera%20rodante%203%20gavetas%20-%20en%20uso"
+                            Url = "https://placehold.co/600x400/png?text=Cajonera%20rodante%203%20gavetas%20-%20en%20uso"
                         },
                         new
                         {
@@ -616,7 +619,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000009"),
                             PublicId = "PRD-009-IMG-1",
                             SortOrder = 0,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Monitor%2027%20pulgadas%20QHD"
+                            Url = "https://placehold.co/600x400/png?text=Monitor%2027%20pulgadas%20QHD"
                         },
                         new
                         {
@@ -625,7 +628,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000009"),
                             PublicId = "PRD-009-IMG-2",
                             SortOrder = 1,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Monitor%2027%20pulgadas%20QHD%20-%20detalle"
+                            Url = "https://placehold.co/600x400/png?text=Monitor%2027%20pulgadas%20QHD%20-%20detalle"
                         },
                         new
                         {
@@ -634,7 +637,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000009"),
                             PublicId = "PRD-009-IMG-3",
                             SortOrder = 2,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Monitor%2027%20pulgadas%20QHD%20-%20en%20uso"
+                            Url = "https://placehold.co/600x400/png?text=Monitor%2027%20pulgadas%20QHD%20-%20en%20uso"
                         },
                         new
                         {
@@ -643,7 +646,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000009"),
                             PublicId = "PRD-009-IMG-4",
                             SortOrder = 3,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Monitor%2027%20pulgadas%20QHD%20-%20empaque"
+                            Url = "https://placehold.co/600x400/png?text=Monitor%2027%20pulgadas%20QHD%20-%20empaque"
                         },
                         new
                         {
@@ -652,7 +655,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000010"),
                             PublicId = "PRD-010-IMG-1",
                             SortOrder = 0,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Teclado%20mecanico%20inalambrico"
+                            Url = "https://placehold.co/600x400/png?text=Teclado%20mecanico%20inalambrico"
                         },
                         new
                         {
@@ -661,7 +664,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000010"),
                             PublicId = "PRD-010-IMG-2",
                             SortOrder = 1,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Teclado%20mecanico%20inalambrico%20-%20detalle"
+                            Url = "https://placehold.co/600x400/png?text=Teclado%20mecanico%20inalambrico%20-%20detalle"
                         },
                         new
                         {
@@ -670,7 +673,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000010"),
                             PublicId = "PRD-010-IMG-3",
                             SortOrder = 2,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Teclado%20mecanico%20inalambrico%20-%20en%20uso"
+                            Url = "https://placehold.co/600x400/png?text=Teclado%20mecanico%20inalambrico%20-%20en%20uso"
                         },
                         new
                         {
@@ -679,7 +682,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000011"),
                             PublicId = "PRD-011-IMG-1",
                             SortOrder = 0,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Diadema%20con%20cancelacion%20de%20ruido"
+                            Url = "https://placehold.co/600x400/png?text=Diadema%20con%20cancelacion%20de%20ruido"
                         },
                         new
                         {
@@ -688,7 +691,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000011"),
                             PublicId = "PRD-011-IMG-2",
                             SortOrder = 1,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Diadema%20con%20cancelacion%20de%20ruido%20-%20detalle"
+                            Url = "https://placehold.co/600x400/png?text=Diadema%20con%20cancelacion%20de%20ruido%20-%20detalle"
                         },
                         new
                         {
@@ -697,7 +700,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000011"),
                             PublicId = "PRD-011-IMG-3",
                             SortOrder = 2,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Diadema%20con%20cancelacion%20de%20ruido%20-%20en%20uso"
+                            Url = "https://placehold.co/600x400/png?text=Diadema%20con%20cancelacion%20de%20ruido%20-%20en%20uso"
                         },
                         new
                         {
@@ -706,7 +709,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000012"),
                             PublicId = "PRD-012-IMG-1",
                             SortOrder = 0,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Base%20refrigerante%20para%20portatil"
+                            Url = "https://placehold.co/600x400/png?text=Base%20refrigerante%20para%20portatil"
                         },
                         new
                         {
@@ -715,7 +718,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000012"),
                             PublicId = "PRD-012-IMG-2",
                             SortOrder = 1,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Base%20refrigerante%20para%20portatil%20-%20detalle"
+                            Url = "https://placehold.co/600x400/png?text=Base%20refrigerante%20para%20portatil%20-%20detalle"
                         },
                         new
                         {
@@ -724,7 +727,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000012"),
                             PublicId = "PRD-012-IMG-3",
                             SortOrder = 2,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Base%20refrigerante%20para%20portatil%20-%20en%20uso"
+                            Url = "https://placehold.co/600x400/png?text=Base%20refrigerante%20para%20portatil%20-%20en%20uso"
                         },
                         new
                         {
@@ -733,7 +736,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000013"),
                             PublicId = "PRD-013-IMG-1",
                             SortOrder = 0,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Organizador%20de%20escritorio%205%20compartimentos"
+                            Url = "https://placehold.co/600x400/png?text=Organizador%20de%20escritorio%205%20compartimentos"
                         },
                         new
                         {
@@ -742,7 +745,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000013"),
                             PublicId = "PRD-013-IMG-2",
                             SortOrder = 1,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Organizador%20de%20escritorio%205%20compartimentos%20-%20detalle"
+                            Url = "https://placehold.co/600x400/png?text=Organizador%20de%20escritorio%205%20compartimentos%20-%20detalle"
                         },
                         new
                         {
@@ -751,7 +754,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000013"),
                             PublicId = "PRD-013-IMG-3",
                             SortOrder = 2,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Organizador%20de%20escritorio%205%20compartimentos%20-%20en%20uso"
+                            Url = "https://placehold.co/600x400/png?text=Organizador%20de%20escritorio%205%20compartimentos%20-%20en%20uso"
                         },
                         new
                         {
@@ -760,7 +763,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000014"),
                             PublicId = "PRD-014-IMG-1",
                             SortOrder = 0,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Caja%20de%20archivo%20tapa%20fija%20x10"
+                            Url = "https://placehold.co/600x400/png?text=Caja%20de%20archivo%20tapa%20fija%20x10"
                         },
                         new
                         {
@@ -769,7 +772,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000014"),
                             PublicId = "PRD-014-IMG-2",
                             SortOrder = 1,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Caja%20de%20archivo%20tapa%20fija%20x10%20-%20detalle"
+                            Url = "https://placehold.co/600x400/png?text=Caja%20de%20archivo%20tapa%20fija%20x10%20-%20detalle"
                         },
                         new
                         {
@@ -778,7 +781,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000014"),
                             PublicId = "PRD-014-IMG-3",
                             SortOrder = 2,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Caja%20de%20archivo%20tapa%20fija%20x10%20-%20en%20uso"
+                            Url = "https://placehold.co/600x400/png?text=Caja%20de%20archivo%20tapa%20fija%20x10%20-%20en%20uso"
                         },
                         new
                         {
@@ -787,7 +790,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000015"),
                             PublicId = "PRD-015-IMG-1",
                             SortOrder = 0,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Notas%20adhesivas%20x6"
+                            Url = "https://placehold.co/600x400/png?text=Notas%20adhesivas%20x6"
                         },
                         new
                         {
@@ -796,7 +799,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000016"),
                             PublicId = "PRD-016-IMG-1",
                             SortOrder = 0,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Perforadora%20industrial%2030%20hojas"
+                            Url = "https://placehold.co/600x400/png?text=Perforadora%20industrial%2030%20hojas"
                         },
                         new
                         {
@@ -805,7 +808,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000016"),
                             PublicId = "PRD-016-IMG-2",
                             SortOrder = 1,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Perforadora%20industrial%2030%20hojas%20-%20detalle"
+                            Url = "https://placehold.co/600x400/png?text=Perforadora%20industrial%2030%20hojas%20-%20detalle"
                         },
                         new
                         {
@@ -814,7 +817,7 @@ namespace TheOffice.Persistence.Migrations
                             ProductId = new Guid("b0000000-0000-4000-8000-000000000016"),
                             PublicId = "PRD-016-IMG-3",
                             SortOrder = 2,
-                            Url = "https://placehold.co/600x400/E5E0D6/78716C/png?text=Perforadora%20industrial%2030%20hojas%20-%20en%20uso"
+                            Url = "https://placehold.co/600x400/png?text=Perforadora%20industrial%2030%20hojas%20-%20en%20uso"
                         });
                 });
 

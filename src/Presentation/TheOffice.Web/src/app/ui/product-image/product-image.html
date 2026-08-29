@@ -1,0 +1,15 @@
+<div class="aspect-3/2 w-full overflow-hidden bg-border" [class]="radius()">
+  @if (hasImage()) {
+    <img
+      class="h-full w-full object-cover"
+      [src]="src()"
+      [alt]="alt()"
+      [attr.loading]="loading()"
+      (error)="onError()"
+    />
+  } @else {
+    <div class="flex h-full w-full items-center justify-center text-label text-text-muted">
+      Sin imagen
+    </div>
+  }
+</div>

@@ -1,0 +1,9 @@
+<label class="sr-only" [for]="inputId">Buscar productos</label>
+<input
+  [id]="inputId"
+  type="search"
+  class="min-h-11 w-full rounded-md border border-secondary bg-surface-raised px-3 text-label"
+  placeholder="Nombre o SKU (ej. PRD-001)"
+  [value]="value()"
+  (input)="onInput($event)"
+/>

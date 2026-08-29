@@ -76,12 +76,21 @@ Además del SDK de .NET 10, el repo usa tres herramientas para sus comprobacione
 | Lefthook | `brew install lefthook` | `winget install evilmartians.lefthook` | `go install github.com/evilmartians/lefthook@latest` |
 | gitleaks | `brew install gitleaks` | `winget install gitleaks` | `apt install gitleaks` en Debian trixie+ / Ubuntu 25.04+; en LTS más viejas, el binario de [releases](https://github.com/gitleaks/gitleaks/releases) |
 | Git Bash | viene con el sistema | **viene con [Git para Windows](https://gitforwindows.org/)** | viene con la distribución |
-| Node / `npx` | `brew install node` | `winget install OpenJS.NodeJS` | el paquete de la distribución |
+| Node.js **≥ 22.22.3** | `brew install node` | `winget install OpenJS.NodeJS` | el paquete de la distribución |
+| pnpm | `brew install pnpm` | `winget install pnpm.pnpm` | `corepack enable pnpm` |
 
-Las dos últimas filas son para el instrumental del agente de IA, no para compilar el proyecto.
 **Git Bash importa en Windows**: los scripts de `scripts/agent-hooks/` son bash, y si Git Bash no
-está, Claude Code cae a PowerShell y los hooks **dejan de hacer nada, en silencio**. Node solo
-hace falta para el servidor MCP de base de datos, que se lanza con `npx`.
+está, Claude Code cae a PowerShell y los hooks **dejan de hacer nada, en silencio**. Esa fila sí es
+instrumental del agente, no requisito de compilación.
+
+**Node ya no lo es.** Desde que el frontend Angular vive en `src/Presentation/TheOffice.Web/`,
+`make check` compila y prueba también el frontend: sin Node no hay comprobación verde. La versión
+exacta está en [`src/Presentation/TheOffice.Web/.nvmrc`](./src/Presentation/TheOffice.Web/.nvmrc)
+y **el `Makefile` la selecciona solo** con `nvm` si lo tienes instalado — no hace falta acordarse
+de `nvm use`. El gestor de paquetes es **pnpm**, fijado en el campo `packageManager` de su
+`package.json`; si falta para esa versión de Node, el `Makefile` lo repone con `corepack`. El costo hay que decirlo en voz alta: **a partir de
+aquí un cambio de una línea en C# paga una instalación de dependencias** en cada `make check`. Es
+el precio de tener una sola señal de confianza en vez de dos que se desincronizan.
 
 ### Puesta en marcha
 
@@ -101,8 +110,18 @@ Desde la raíz del repositorio:
    make check
    ```
 
-`make check` corre estilo, compilación y pruebas — es la misma comprobación que ejecuta la
-integración continua. `make help` lista el resto de objetivos.
+`make check` corre estilo, compilación y pruebas del backend **y del frontend**: es la señal local.
+La integración continua ejecuta `make ci`, que es `make check` más restauración en modo bloqueado
+(`restore-locked`, que falla si el lock file no coincide) y el escaneo de secretos. `make help` lista el resto de objetivos; los del
+frontend llevan el prefijo `web-`.
+
+Para trabajar, `make dev` levanta el backend y el frontend a la vez:
+
+```bash
+make dev    # levanta API y frontend juntos; un Ctrl-C apaga los dos
+```
+
+Su propio [`README`](./src/Presentation/TheOffice.Web/README.md) tiene el detalle.
 
 No hace falta preparar la base de datos: en `Development` la aplicación aplica las migraciones al arrancar y siembra el catálogo. El archivo `theoffice.db` se crea local y está ignorado por Git.
 

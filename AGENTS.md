@@ -1,6 +1,6 @@
 # AGENTS.md — TheOffice
 
-Ecommerce B2B de artículos de oficina. Hoy solo existe el **backend del catálogo** (`src/`): API REST de productos, categorías y clientes. Frontend, carrito/pedidos, backoffice y autenticación **no están construidos** — no asumas que existen.
+Ecommerce B2B de artículos de oficina. Hoy existen el **backend del catálogo** (`src/`): API REST de productos, categorías y clientes, y el **frontend del catálogo** (`src/Presentation/TheOffice.Web`): dos pantallas Angular de solo lectura. Carrito/pedidos, backoffice y autenticación **no están construidos** — no asumas que existen.
 
 Guía para agentes de IA que trabajan en este repositorio. Sigue la convención [agents.md](https://agents.md).
 
@@ -15,6 +15,8 @@ Este archivo solo captura lo que no es obvio leyendo el código. Para arquitectu
 - [`docs/business.md`](./docs/business.md) — qué es el producto y quién paga.
 - [`docs/target-user.md`](./docs/target-user.md) — quién lo usa y qué le importa.
 - [`docs/adrs/`](./docs/adrs/) — por qué las cosas son como son.
+- [`src/Presentation/TheOffice.Web/README.md`](./src/Presentation/TheOffice.Web/README.md) — el frontend Angular: cómo correrlo, y el mapeo de tokens del diseño a Tailwind.
+- [`src/Presentation/TheOffice.Web/DESIGN.md`](./src/Presentation/TheOffice.Web/DESIGN.md) — **la autoridad de todo el trabajo de UI**: los tokens y cuándo usar cada uno. Consume los tokens; no inventes valores.
 - [`docs/claims-ledger.md`](./docs/claims-ledger.md) — qué de estos docs está verificado contra el repo.
 - [`README.md`](./README.md) — doc preexistente: endpoints, stack y las decisiones de implementación originales.
 
@@ -143,6 +145,65 @@ xUnit v3 + NSubstitute, con las aserciones nativas de `Assert` (los DTOs de resp
 `tests/TheOffice.ArchitectureTests` es la excepción a la regla de un proyecto de pruebas por proyecto bajo prueba: no prueba una capa, sino la relación entre todas. Usa ArchUnitNET y convierte la regla de dependencias de [arquitectura](./docs/architecture.md) en una prueba que se pone en rojo. `make test` lo corre junto con el resto; `make arch` lo corre solo.
 
 Un cambio se considera listo cuando tiene **pruebas unitarias de la capa Application y pruebas de integración** para repositorios y controllers. Hoy hay unitarias de `ProductService` y las de arquitectura; la integración (`WebApplicationFactory`, SQLite in-memory) aún no está montada y `Program.cs` no expone `public partial class Program`, que haría falta. Ver [`docs/dotnet.md`](./docs/dotnet.md) §7 y §12.
+
+## Frontend (`src/Presentation/TheOffice.Web`)
+
+Angular 22 + Tailwind v4. Dos pantallas de solo lectura: listado (`/`, `/productos`) y ficha
+(`/productos/:publicId`). Su [`README`](./src/Presentation/TheOffice.Web/README.md) tiene el detalle
+y el mapeo completo de tokens; aquí solo va lo que no se deduce leyendo el código.
+
+- **No está en `src/TheOffice.sln`** y no tiene `.csproj` envoltorio. Es **invisible** para
+  `dotnet build`, `dotnet format` y las pruebas de arquitectura — que es justo lo que se busca. Toda
+  su integración con las compuertas pasa por el `Makefile` (`make web-*`, y `make check` los corre).
+- **`make check` ahora exige Node y pnpm**, y paga una instalación de dependencias en cada corrida,
+  incluso para un cambio de una línea en C#. Es el costo aceptado de tener una sola señal de
+  confianza. La versión de Node está en `src/Presentation/TheOffice.Web/.nvmrc` y la de pnpm en el
+  campo `packageManager` de su `package.json`; el CLI **rechaza** un Node anterior, no avisa.
+- **El gestor es pnpm, y su árbol estricto muerde dos veces.** `.npmrc` eleva `@angular-eslint` a la
+  raíz de `node_modules` (el Angular CLI resuelve los builders desde ahí, no por el grafo del
+  paquete que los declara), y `pnpm.onlyBuiltDependencies` autoriza los scripts de instalación de
+  `esbuild` y compañía. Sin cualquiera de las dos cosas el repo falla en verde aparente: `lint` o
+  `build` se rompen con un mensaje que no menciona a pnpm.
+- **`pageSize` es 10 por decisión del frontend**, no el 6 que la API devuelve por defecto. Va
+  explícito en cada petición.
+- **Los nombres de categoría llegan sin tildes** (`Papeleria`, `Tecnologia`). Se renderiza lo que
+  llega: no se "corrige" en el cliente.
+- **La búsqueda por SKU** (`^PRD-\d{3}$` → navegar a la ficha) **vive solo en el cliente.** La API no
+  la tiene y no se le va a pedir.
+- **Cero valores arbitrarios de Tailwind** (`bg-[#…]`): si falta un color, falta un token en
+  `DESIGN.md`. Tailwind v4 no usa `tailwind.config.js`.
+- **Los tokens se generan; `src/theme.css` y `design/tokens.json` no se editan a mano.** La fuente
+  es el frontmatter de `DESIGN.md`: edítalo, corre `make web-tokens` y commitea los tres archivos.
+  `make web-design-check` (dentro de `make check`) falla si divergen. Un límite del formato: el
+  export DTCG **descarta `lineHeight`**, por eso el generador lee `DESIGN.md` y no el JSON.
+- **El sistema de diseño es el Arkandia Design System** (ámbar `#FBB03B` con texto **negro**,
+  zafiro `#3B86FB` solo para enlaces y foco, pergamino `#FEFAF6` de fondo, crema `#F1E9DA` en
+  tarjetas, Aleo/Rubik/Fira Code, radios de 3/6/12 px). Es **plano a propósito**: sin `shadow-*`,
+  sin degradados. Su fuente canónica está fuera de este repo (`campus-prep/frontend/DESIGN.md`) y
+  llega aquí vía el proyecto de Claude Design homónimo. Los estados de inventario no tienen tokens
+  propios: se expresan con `foreground` / `primary-active` / `destructive` / `secondary`.
+- **Tres adiciones y dos desviaciones frente al sistema de origen**, todas por accesibilidad y
+  anotadas en `DESIGN.md`: `surface-raised` (el blanco que su navbar usa pero su paleta no nombra),
+  `tertiary-strong` y `primary-strong` (los mismos tonos oscurecidos hasta pasar AA como texto: los
+  de marca dan 2.91:1 y 2.41:1), más apagar sin `opacity-50` y usar `secondary` como filete de
+  control. No las "corrijas" hacia el sistema de origen.
+- **`make web-design-classes` es la otra mitad de la compuerta del diseño.** `design-check` cubre
+  `DESIGN.md → CSS`; este cubre `CSS → plantillas` y falla si una clase no resuelve. Necesita el CSS
+  compilado, por eso va después de `web-build` dentro de `make web`.
+- **`text-muted` no es una clase.** El token `text-muted` genera `text-text-muted`; escrito a secas
+  cae en el namespace de tamaños de Tailwind, no genera nada y el elemento hereda el color del
+  padre, **sin que build, lint ni pruebas lo reporten**. Igual con `text-faint`.
+- **Los fallos son valores, no excepciones**: `CatalogService` devuelve `Fetched<T>`
+  (`ok` / `not-found` / `error`), mismo criterio que el Result pattern del backend. La pantalla
+  nunca muestra un código HTTP.
+- **Los huecos deliberados también aplican aquí**: sin carrito, sin autenticación, sin i18n, sin
+  selector de ordenamiento, sin contadores por categoría, ninguna mención a IVA. Si el diseño lo
+  pide, está fuera de alcance.
+- Las pruebas corren con **Vitest sin navegador**, para que CI no dependa de Chrome. Eso deja un
+  hueco que hay que conocer: nada de lo que se rompe **solo en un navegador de verdad** — el foco
+  visible, el desbordamiento a 360 px, un prompt que deja colgado al servidor — lo ve `make check`.
+  Ese recorrido se hizo a mano con el MCP de Chrome DevTools y quedó en el PR #7; si tocas las
+  pantallas, repítelo.
 
 ## Estilo de código
 

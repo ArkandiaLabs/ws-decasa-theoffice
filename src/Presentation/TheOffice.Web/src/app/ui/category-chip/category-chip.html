@@ -1,0 +1,10 @@
+@if (variant() === 'link') {
+  <a [class]="classes()" routerLink="/productos" [queryParams]="linkParams()">{{ label() }}</a>
+} @else {
+  <button type="button" [class]="classes()" [attr.aria-label]="ariaLabel()" (click)="onClick()">
+    <span>{{ label() }}</span>
+    @if (removable()) {
+      <span aria-hidden="true">✕</span>
+    }
+  </button>
+}

@@ -1,0 +1,38 @@
+/* Tipografia self-hosted: el build la empaqueta, no la pide al CDN de Google Fonts que usa el
+   proyecto de diseno. Solo los pesos que usa la escala; cada peso extra es una descarga que
+   nadie mira. */
+@import '@fontsource/aleo/600.css';
+@import '@fontsource/aleo/700.css';
+@import '@fontsource/rubik/400.css';
+@import '@fontsource/rubik/500.css';
+@import '@fontsource/fira-code/400.css';
+
+@import 'tailwindcss';
+
+/* Colores, tipografia y radios se generan desde DESIGN.md — se editan alli, no aqui. */
+@import './theme.css';
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: var(--color-neutral);
+    color: var(--color-foreground);
+    font-family: var(--font-body);
+    margin: 0;
+  }
+
+  /* Foco visible global, 2px como pide el sistema. Tailwind no trae accesibilidad de teclado. */
+  :focus-visible {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: 2px;
+  }
+
+  /* El zafiro de marca da 1.90:1 sobre el ambar del encabezado, bajo el minimo de 3:1. */
+  header :focus-visible {
+    outline-color: var(--color-tertiary-strong);
+  }
+}

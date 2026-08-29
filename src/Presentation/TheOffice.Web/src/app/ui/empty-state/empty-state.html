@@ -1,0 +1,23 @@
+<div class="rounded-lg border border-border bg-surface p-8 text-center">
+  <h2 class="font-display text-h2 text-foreground">{{ title() }}</h2>
+
+  <p class="mt-2 text-body text-foreground">{{ message() }}</p>
+
+  @if (hint(); as hintText) {
+    <p class="mt-1 text-label text-text-muted">{{ hintText }}</p>
+  }
+
+  @if (primaryLabel() || secondaryLabel()) {
+    <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
+      @if (primaryLabel(); as label) {
+        <app-button data-testid="primary-button" (pressed)="primary.emit()">{{ label }}</app-button>
+      }
+
+      @if (secondaryLabel(); as label) {
+        <app-button data-testid="secondary-button" variant="secondary" (pressed)="secondary.emit()">
+          {{ label }}
+        </app-button>
+      }
+    </div>
+  }
+</div>

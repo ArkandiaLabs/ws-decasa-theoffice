@@ -1,0 +1,36 @@
+@if (hasItems()) {
+  <nav aria-label="Paginación" class="flex flex-wrap items-center justify-between gap-3">
+    <p class="text-label text-text-muted">{{ legend() }}</p>
+
+    <div class="flex flex-wrap items-center gap-1">
+      <button
+        type="button"
+        [class]="controlClasses(isFirst())"
+        [disabled]="isFirst()"
+        (click)="go(page() - 1)"
+      >
+        Anterior
+      </button>
+
+      @for (target of pages(); track target) {
+        <button
+          type="button"
+          [class]="pageClasses(target)"
+          [attr.aria-current]="target === page() ? 'page' : null"
+          (click)="go(target)"
+        >
+          {{ target }}
+        </button>
+      }
+
+      <button
+        type="button"
+        [class]="controlClasses(isLast())"
+        [disabled]="isLast()"
+        (click)="go(page() + 1)"
+      >
+        Siguiente
+      </button>
+    </div>
+  </nav>
+}

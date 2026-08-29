@@ -24,6 +24,11 @@ jobs:
       github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-latest
 
+    # `make ci` restaura dependencias y corre scripts del checkout: no necesita escribir nada.
+    # Sin este bloque el token hereda los permisos por defecto del repo, que pueden ser de escritura.
+    permissions:
+      contents: read
+
     steps:
       # gitleaks scans history, so it needs the full clone.
       - uses: actions/checkout@v7
@@ -70,6 +75,24 @@ jobs:
           # top of it only busts the cache on edits that cannot change what gets restored.
           key: nuget-${{ runner.os }}-${{ hashFiles('**/packages.lock.json', '**/Directory.Packages.props') }}
           restore-keys: nuget-${{ runner.os }}-
+
+      # El frontend vive fuera del .sln y sus compuertas cuelgan de `make ci`. Estos dos pasos
+      # solo ponen pnpm y Node en PATH; los comandos siguen viviendo en el Makefile.
+      #
+      # pnpm va ANTES de setup-node: `cache: pnpm` necesita el binario para preguntarle donde
+      # tiene el store. La version sale del campo `packageManager` de package.json, que es
+      # tambien el que usa la maquina de cada quien.
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          package_json_file: src/Presentation/TheOffice.Web/package.json
+
+      - name: Install Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: src/Presentation/TheOffice.Web/.nvmrc
+          cache: pnpm
+          cache-dependency-path: src/Presentation/TheOffice.Web/pnpm-lock.yaml
 
       # One definition of "the code is fine". Restating the steps here would guarantee drift the
       # first time someone adds a check to the Makefile. `make ci` restores in locked mode, so a
