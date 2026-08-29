@@ -12,8 +12,10 @@ whatever tracker the ticket came from.
 | Binding | What it names |
 |---|---|
 | `TICKET` | the work item / issue you are implementing |
+| `SUB-TICKETS` | the child items of `TICKET`, if it has any — how to list them, comment on one, and set one's status |
 | `STATUS→IN-PROGRESS` | how to move `TICKET` to its in-progress state |
 | `STATUS→IN-REVIEW` | how to move `TICKET` to its in-review state |
+| `STATUS→DONE` | how to move a **sub-ticket** to its completed state |
 | `COMMENT` | how to post a comment on `TICKET` |
 | `BRANCH` | the feature branch name |
 | `LINK-TOKEN` | the string that makes the tracker attach a commit to `TICKET` |
@@ -27,11 +29,52 @@ things that stop you.
 
 ---
 
+## Standing rule — say what you are doing, in plain language
+
+This run is long and mostly unattended. Between Step A and Step J the only window the
+user has into it is what you print, so print deliberately rather than leaving them to
+infer progress from tool output.
+
+- **One line when a step starts, one when it closes** — which step, which item of the
+  work list, and the result. `Step F · ABC-124 "Export endpoint" · 3 of 5 · tests
+  green` is worth more than either silence or a wall of raw output.
+- **Announce every change the user would otherwise find out about later** — the branch
+  created, each tracker status written (and which state you picked), each commit and
+  push, the PR URL, the CI run you are waiting on and roughly how long it takes.
+- **Write for the person who wrote the ticket, not for the person who will review the
+  diff.** Plain sentences, no unexplained jargon: "rerunning the failing test job once
+  in case it was flaky" beats "rerun --failed on job 42". Same rule for tracker
+  comments and the PR body.
+- **Never announce work you have not done.** A line printed ahead of the fact is a
+  plan, not a report — say what happened, after it happened.
+
 ## Step A — Grill the user
 
 A ticket is a pointer, not a specification. Before you explore, close the design
 questions the ticket left open — a wrong assumption discovered at Step F costs an
 implementation; discovered here it costs one question.
+
+**First, settle what you are building.** If `TICKET` has `SUB-TICKETS`, ask which of
+them this run covers: one `AskUserQuestion` with `multiSelect: true`, listing each child
+by key, title and current status, with **"All of them"** first and marked
+`(Recommended)`. The selected children become the **work list**, ordered by their
+dependencies; the ones left out are named in the Step J report so nobody assumes they
+shipped. If `TICKET` has no children, the work list is the ticket itself. Do this before
+the design questions — what is worth asking depends on what you are actually building.
+
+**Two things are settled before that question is asked, not after:**
+
+- **A child already in a terminal state is not work.** Read each child's status, and
+  leave the ones already completed (or cancelled/duplicate/won't-do) **out of "All of
+  them"** — list them in the question as context, marked with their state, so the user
+  can still select one deliberately to redo it. "All of them" that silently reopens
+  finished work is a destructive default.
+- **A selected child whose dependency is neither selected nor already complete is a
+  question, not a plan.** Dependencies come from the tracker's own relations plus what
+  the ticket text says; where a child cannot start until another lands, say so and ask
+  before continuing — add the missing dependency to the run, or confirm it is already
+  done elsewhere. Never build a child on top of work that is not there: the gates fail
+  late, at Step G, on a diff that was never coherent.
 
 **Ask only what nobody has answered yet.** Read `TICKET`, its comments, its parent and
 subissues, and the repo's `AGENTS.md` / `CLAUDE.md` / `docs/` pack **first**. A
@@ -64,9 +107,14 @@ Record the outcome in two explicit lists you carry into the plan:
 
 - **Decisions** — what the user answered. Quote them; do not paraphrase into
   something looser.
-- **Assumptions** — what you settled yourself because it was too minor to ask.
-  Assumptions are exactly what the Step E checkpoint exists to catch, so write them
-  down even when you are confident.
+- **Assumptions** — what you settled yourself because it was too minor to ask. Write
+  each one with its **source** — `file:line` where you read it, `inferred` where you
+  deduced it from an indirect signal, `none` where you simply picked what seemed
+  reasonable — and one clause naming what would falsify it. Assumptions are exactly
+  what the Step E checkpoint exists to catch, so write them down even when you are
+  confident. **An assumption with source `none` about a public contract, a data
+  schema, auth, or a money path is not an assumption — it is a Step A question you
+  did not ask.** Go back and ask it.
 
 Step A is **not** skippable. The `skip-checkpoint` argument governs Step E only.
 
@@ -86,14 +134,31 @@ Step A is **not** skippable. The `skip-checkpoint` argument governs Step E only.
    they run concurrently. Pick the partition the codebase already has — modules,
    packages, services, bounded contexts, whatever it is — and scope each agent to the
    area the feature touches. Ask each for the files that exist, the exact symbols
-   involved, and any edge case visible in its area (an unguarded parse, a missing
-   uniqueness check, a swallowed error). Tell each one to **read, not judge** — no
-   plans, no fixes. Their combined output is a map, not an opinion.
+   involved, **the existing tests that assert the current behavior of those symbols**
+   (by file and test name), and any edge case visible in its area (an unguarded parse,
+   a missing uniqueness check, a swallowed error). Tell each one to **read, not
+   judge** — no plans, no fixes. Their combined output is a map, not an opinion.
 
 4. Synthesize one short map yourself. Where two subagents disagree about the same
    file, open it and settle it — do not average their claims. If the feature is a
    single-file change, skip the fan-out; several agents to read one function is waste,
    and saying so out loud is part of the discipline.
+
+5. **Decide the fate of the tests this change invalidates — here, before any code.**
+   A test that asserts today's behavior is not a test that will break later; it is a
+   decision the plan has to carry now. For every symbol the feature changes, take the
+   existing tests over it and give each one a verdict:
+
+   - **update** — the Step A Decisions cover this behavior change. The test moves to
+     the new expectation **in the same step that changes the code**, never after.
+   - **delete** — the behavior disappears entirely; there is nothing left to assert.
+     Say what it used to cover, so the plan shows what stopped being tested.
+   - **escalate** — the test asserts something the ticket never mentioned. Stop and
+     ask. Either the change breaks more than anyone said, or that test is the only
+     place the requirement was ever written down. Both are the user's call, not yours.
+
+   Finding this at Step I, when CI goes red, is exactly the failure mode this step
+   prevents — that is where "the test is in the way" turns into loosening it.
 
 ## Step C — Draft the plan
 
@@ -102,8 +167,20 @@ verification, expressed in **the repo's own commands** (from `AGENTS.md`'s "Comm
 section, the `Makefile`, `package.json` scripts, or whatever the repo uses). The
 **first implementation step is a failing test** that proves the behavior is missing.
 
-The plan must also carry, verbatim: the **Decisions** and **Assumptions** from Step A,
-the dependencies and risks, and what you deliberately left out of scope.
+The plan must also carry, verbatim: the **work list** from Step A, the **Decisions** and
+**Assumptions** from Step A (each assumption with its source), the **test verdicts** from
+Step B.5 — every existing test to update or delete, named by file and test — the
+dependencies and risks, and what you deliberately left out of scope.
+
+**Write it to `.claude/plans/<TICKET>.md`** as you draft it, and keep it current as you
+work: the work list with each item's state, the steps, and what each one verified. It is
+a **working notebook**. It survives a session that dies or gets compacted, so a resumed
+run continues instead of re-deriving everything, and the user can read it while you work.
+
+Two rules keep it from becoming noise. **Never stage it** — Step F.6 stages only the
+files the change touches, and this is not one of them. And **never treat it as the
+permanent record**: that is the PR body and the `COMMENT` on `TICKET`, which is where
+someone looks six months from now. Step J asks the user what to do with the file.
 
 ## Step D — Adversarial review
 
@@ -172,10 +249,21 @@ Set `STATUS→IN-PROGRESS` here (pre-authorized — do not ask).
 
 ## Step F — Implement, test-first
 
-1. Break the plan into 3–8 concrete steps with `TaskCreate`; mark each `in_progress` /
-   `completed` as you go. State lives in the task list, not in memory.
+1. **Work one item of the work list at a time**, in the plan's order. Set that
+   sub-ticket's `STATUS→IN-PROGRESS` when you start it (pre-authorized — do not ask),
+   break its steps into 3–8 concrete items with `TaskCreate`, and mark each
+   `in_progress` / `completed` as you go. State lives in the task list and the plan
+   file, not in memory.
 
-2. **Partition the steps by the files they touch.** This decides what can fan out, and
+2. **Delegate the writing; keep the judgment.** The main session is the orchestrator —
+   it holds the plan, runs the gates and talks to the user — and every file it reads in
+   full is context it will not have later in the run. So the default is that a subagent
+   does the editing and reports back what it changed, not the file contents. Serial
+   does **not** mean "in the main session": steps that must run in order can go to a
+   single subagent that runs them in order. Keep in the main session only what needs
+   it — the gates (Step G), the pushes, the tracker writes and the user-facing lines.
+
+   **Partition the steps by the files they touch.** This decides what can fan out, and
    it is the whole judgment call:
 
    - Steps whose file sets are **disjoint** (a new validator in one module, an
@@ -204,11 +292,63 @@ Set `STATUS→IN-PROGRESS` here (pre-authorized — do not ask).
    repo's own file-size and module-splitting conventions if it has any; do not impose
    a limit it never asked for.
 
+   **Comment the way this repo already comments.** Match the surrounding density,
+   which usually means writing none: a comment earns its place when a reader would
+   otherwise ask *why* — a workaround, a constraint from outside the code, a rule that
+   looks wrong until you know the reason — never to restate what the line says, and
+   never as narration of your own change ("added validation here"). The same restraint
+   applies to config, YAML and project files: comment the value that would surprise
+   someone, not every key. **Write comments in the language the repo's code already
+   uses** — English unless the surrounding code says otherwise, whatever language this
+   conversation is in.
+
 5. On **3 consecutive failures of the same check**, stop iterating blindly. Classify
    the cause — test, code, environment, or plan drift — fix it at the source, and
    resume. If you can't confidently classify it, that's an escalation.
 
+6. **Close each item before starting the next.** Once its steps are done and its
+   targeted checks pass:
+
+   1. Stage **only the files that item touched** — never `git add -A`, never the plan
+      file, never anything secret-like (`.env`, keys, tokens), and never echo a secret
+      value into a command or a commit message.
+   2. Commit with a message carrying `LINK-TOKEN` for **that sub-ticket**, so the
+      tracker attaches the commit to the child and not only to the parent. **When the
+      work list is `TICKET` itself** — no children, per Step A — there is no child key
+      to use: the parent's is the one that goes in every commit, here and in the fixes
+      made at Step G and Step I.
+   3. Push `BRANCH`. Everything lands on the same branch — **one branch for the whole
+      `TICKET`**, and one PR at the end.
+   4. `COMMENT` on the sub-ticket with what changed and the checks that verified it,
+      then set its `STATUS→DONE` (both pre-authorized). A child that is implemented,
+      gated, committed and pushed is finished as a unit of work; leaving it in progress
+      makes the board claim there is work left that nobody is doing. **The parent is
+      the one that waits** — it moves to `STATUS→IN-REVIEW` at Step J and stays there
+      until someone merges the PR, which is never you. A child you had to abandon or
+      escalate is the exception: leave it in progress and say so.
+
+      **`STATUS→DONE` is for children only.** If `TICKET` has no children, the work list
+      is the ticket itself (Step A) — it is the parent, so **comment here and leave the
+      status alone**. Step J moves it to `STATUS→IN-REVIEW`. Closing it here would put
+      the board in Done before a PR exists and then walk it *backwards* into In Review,
+      which is the one thing a tracker must never show.
+   5. Update the plan file, then start the next item.
+
+   **Keep the plan file current *inside* the item too, not only when it closes.** Tick
+   each step as its targeted checks pass, and record a decision or a deviation when it
+   happens. An item can take many turns and a session can be interrupted in any of them;
+   a plan file written only at close-out loses everything since the last item, and the
+   resumed run rebuilds it from the diff — or from guesswork.
+
+   A mid-branch push is a **checkpoint, not a delivery**: the targeted checks of F.3 are
+   what gate it, and the full gate set runs once at Step G over the complete diff. If
+   the repo's whole gate takes seconds, run it here too — cheap insurance.
+
 ## Step G — Gates
+
+Run this **once, over the complete branch diff**, after the last item of the work list
+is closed — not per sub-ticket. Step F.6 already gated each push with targeted checks;
+this is the full sweep that stands behind the PR.
 
 **Resolve the repo's gate commands in this order**, and use the first that answers:
 
@@ -238,17 +378,37 @@ evidence.
 **Never proceed on red.** Fix and re-run this step. On an *ambiguous* failure — flaky
 versus real, unclear error, possibly pre-existing — escalate rather than guess.
 
-## Step H — Commit, push, open the PR
+**Fixes here follow the same close-out as F.6.** Stage only the files you touched,
+commit with the `LINK-TOKEN` of the sub-ticket the fix belongs to, push `BRANCH`. Never
+`git add -A`, never the plan file, never anything secret-like. The commit/push rules live
+in F.6.1–F.6.3 and they apply to every commit on this branch, not only the ones made
+inside the loop.
 
-1. Stage **only the files you changed** — never `git add -A`, never anything
-   secret-like (`.env`, keys, tokens), and never echo a secret value into a command or
-   a commit message.
-2. Commit with a message that includes `LINK-TOKEN` so the tracker attaches the commit
-   to `TICKET`.
-3. Push `BRANCH`.
-4. Open the PR with `OPEN-PR`. The body links `TICKET`, summarizes the change, and
-   lists **the verification commands you actually ran** with their results — not the
-   ones you intended to run.
+**A red gate on work already marked done sends that item back.** F.6.4 closes a child on
+its *targeted* checks; this step is the first time the full suite, `/code-review` and
+`/security-review` see the complete diff. If a finding lands in a sub-ticket already at
+`STATUS→DONE`, move it back to in progress, `COMMENT` what the gate found, fix it, and
+close it again through F.6.4. A tracker left asserting a verification that later failed
+is worse than one that never claimed it.
+
+## Step H — Open the PR
+
+The commits and pushes already happened, one per item, in Step F.6. What is left is the
+delivery.
+
+1. **Confirm the work list is complete**: every selected sub-ticket implemented, its
+   checks green, its commit pushed, and `git status` clean apart from the plan file. If
+   it is not clean, a fix from Step G was left uncommitted — commit it under F.6.1–F.6.3
+   rather than improvising a commit here.
+2. **If anything on the work list was not implemented** — blocked, escalated, or
+   abandoned — **do not open the PR.** Report what is missing and why, `COMMENT` the
+   same on `TICKET`, and **leave `BRANCH` pushed**: nothing that was built is lost and
+   the run can be resumed. This is the one place a run ends without a PR, and it ends
+   there deliberately.
+3. Open the PR with `OPEN-PR`, **once, for the whole `TICKET`**. Its title carries
+   `LINK-TOKEN`. Its body links `TICKET`, lists each sub-ticket with what it changed,
+   and states **the verification commands you actually ran** with their results — not
+   the ones you intended to run.
 
 **Never merge the PR** and never enable auto-complete. Opening it is where your
 authority ends.
@@ -269,7 +429,9 @@ On red:
 2. Classify **flaky vs. real**. Rerun a plausibly-flaky job **once**. If it fails
    again, it is real.
 3. Fix a real failure **at the source** — not by loosening the test. Re-run Step G
-   locally, then push.
+   locally, then commit and push under the F.6.1–F.6.3 rules — staged narrowly, with the
+   `LINK-TOKEN` of the sub-ticket the fix belongs to. Same for a code change made in
+   response to a review comment below.
 4. **Convergence guard:** three fix attempts on the same failing job and you stop and
    escalate. A loop that isn't converging is a signal, not a reason to keep going.
 
@@ -280,12 +442,27 @@ for a product judgment nobody has answered is an escalation, not a code change.
 
 ## Step J — Wrap up
 
-1. Post the summary via `COMMENT` and set `STATUS→IN-REVIEW` (both pre-authorized —
-   never ask). The summary must reflect the **final** state: the PR URL, that CI is
-   green, and that review comments were addressed.
-2. Report back in the session: PR URL, CI status, tracker status, what the watch loop
-   changed after the first push, which comments you addressed, which gates were
-   skipped because the repo does not define them, and anything deliberately left for a
+1. Post the summary via `COMMENT` on `TICKET` — the parent — and set its
+   `STATUS→IN-REVIEW` (both pre-authorized — never ask). The parent is what waits on
+   the PR; the sub-tickets were already commented and moved to their completed state
+   as each one closed, in Step F.6. The summary must reflect the
+   **final** state: the PR URL, the CI result, and that review comments were addressed.
+   **Report CI as green only if CI exists and passed.** A repo with no pipeline gets
+   "no CI configured — the gates that ran were <the ones from Step G>", never silence
+   and never "green": the reader cannot tell a passing suite from an absent one, and the
+   PR body is where that difference gets decided.
+2. **Ask what to do with `.claude/plans/<TICKET>.md`** — one `AskUserQuestion`, three
+   options, **Delete it** first: delete, leave it in place, or move it into the repo's
+   own documentation if the team keeps plans there. Never commit it on your own
+   initiative. Deleting is `rm .claude/plans/<TICKET>.md` and nothing wider. It **will ask
+   for permission** — `allowed-tools` is static and `<TICKET>` is not, so no grant can be
+   written that covers this plan and not every other ticket's. One prompt, for the only
+   destructive step in the run, immediately after the user chose it.
+3. Report back in the session: PR URL, CI status — green, red, or **not configured**,
+   named as such — tracker status, **which sub-tickets were built and which were left out
+   of this run** (and which were already complete before it started), what the watch loop
+   changed after the first push, which comments you addressed, which gates were skipped
+   because the repo does not define them, and anything deliberately left for a
    follow-up.
 
 ---

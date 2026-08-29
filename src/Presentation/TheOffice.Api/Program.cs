@@ -65,7 +65,12 @@ var app = builder.Build();
     }
 
     app.MapOpenApi().WithDocumentPerVersion();
-    app.MapScalarApiReference();
+
+    // Scalar solo muestra el documento v1 si no se le declaran los demas: los endpoints de
+    // v2 quedan invisibles en /scalar aunque /openapi/v2.json exista. Las versiones se leen
+    // del versionador, para que una nueva aparezca sin tocar esto.
+    var apiVersions = app.DescribeApiVersions().Select(x => x.GroupName).ToArray();
+    app.MapScalarApiReference(options => options.AddDocuments(apiVersions));
   }
   else
   {
