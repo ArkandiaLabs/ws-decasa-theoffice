@@ -15,5 +15,12 @@ export const routes: Routes = [
     title: 'TheOffice — Catálogo',
     loadComponent: () => import('./pages/product-list/product-list').then((m) => m.ProductList),
   },
+  {
+    // `publicId` es el SKU (`PRD-001`), no un Guid ni un slug. Llega al componente como
+    // `input()` gracias a `withComponentInputBinding()`.
+    path: 'productos/:publicId',
+    loadComponent: () =>
+      import('./pages/product-detail/product-detail').then((m) => m.ProductDetailPage),
+  },
   { path: '**', redirectTo: '' },
 ];
