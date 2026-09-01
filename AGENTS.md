@@ -164,6 +164,16 @@ y el mapeo completo de tokens; aquí solo va lo que no se deduce leyendo el cód
   paquete que los declara), y `pnpm.onlyBuiltDependencies` autoriza los scripts de instalación de
   `esbuild` y compañía. Sin cualquiera de las dos cosas el repo falla en verde aparente: `lint` o
   `build` se rompen con un mensaje que no menciona a pnpm.
+- **El listado consume v1 y la ficha consume v2.** `GET /api/v2/products/{publicId}` es la única
+  versión que devuelve `images[]`, y la galería la necesita. El listado se queda en v1 a
+  propósito: `ProductSummaryV2Response` tiene otra forma y migrarlo no es gratis. Son dos bases
+  en `environment`, `apiBaseUrl` y `apiV2BaseUrl`.
+- **`images[]` llega ordenada por `sortOrder`, no por `isPrimary`.** `ProductMapper.ToResponseV2`
+  ordena por `SortOrder` y luego `PublicId`; que la principal venga de primera es propiedad de
+  los datos sembrados, no del contrato. La galería reordena y elige la principal por su marca.
+- **La API no manda texto alternativo de las fotos.** `ProductImageResponse` trae `publicId`,
+  `url`, `sortOrder` e `isPrimary`, nada más. La imagen grande usa el nombre del producto y cada
+  miniatura es un control que dice qué foto elige; no se inventan descripciones por posición.
 - **`pageSize` es 10 por decisión del frontend**, no el 6 que la API devuelve por defecto. Va
   explícito en cada petición.
 - **Los nombres de categoría llegan sin tildes** (`Papeleria`, `Tecnologia`). Se renderiza lo que

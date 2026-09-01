@@ -45,8 +45,10 @@ pnpm install    # una sola vez
 pnpm start      # terminal 2 — app en http://localhost:4200
 ```
 
-El navegador nunca ve el `5226`: la app pide `/api/v1` en su propio origen y
+El navegador nunca ve el `5226`: la app pide `/api` en su propio origen y
 [`proxy.conf.json`](./proxy.conf.json) lo reenvía. **Cero URLs absolutas de API en el código.**
+El listado y las categorías van a `/api/v1`; la ficha va a `/api/v2`, la única versión que
+devuelve la galería. El proxy reenvía `/api` completo, así que las dos rutas ya funcionan.
 
 ## Comandos
 
