@@ -1,0 +1,104 @@
+<div
+  class="flex flex-col gap-2"
+  role="group"
+  [attr.aria-label]="'Galería de fotos de ' + productName()"
+>
+  <div class="relative aspect-3/2 w-full overflow-hidden rounded-lg bg-surface">
+    @if (currentUrl(); as url) {
+      <img
+        class="h-full w-full object-cover"
+        [src]="url"
+        [alt]="alt()"
+        loading="eager"
+        (error)="onCurrentError()"
+      />
+    } @else {
+      <div class="flex h-full w-full flex-col items-center justify-center gap-2 text-text-muted">
+        <svg
+          width="32"
+          height="32"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+          <circle cx="8.5" cy="8.5" r="1.5"></circle>
+          <path d="M21 15l-5-5L5 21"></path>
+          <line x1="3" y1="3" x2="21" y2="21"></line>
+        </svg>
+        <span class="text-label">Sin imagen</span>
+      </div>
+    }
+
+    @if (hasMultiple()) {
+      <button
+        type="button"
+        class="absolute top-1/2 left-2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-sm border border-secondary bg-surface-raised text-h3 leading-none text-foreground"
+        aria-label="Foto anterior"
+        (click)="previous()"
+      >
+        <span aria-hidden="true">‹</span>
+      </button>
+
+      <button
+        type="button"
+        class="absolute top-1/2 right-2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-sm border border-secondary bg-surface-raised text-h3 leading-none text-foreground"
+        aria-label="Foto siguiente"
+        (click)="next()"
+      >
+        <span aria-hidden="true">›</span>
+      </button>
+    }
+  </div>
+
+  @if (hasMultiple()) {
+    <div role="tablist" aria-label="Miniaturas de fotos" class="flex flex-wrap gap-2">
+      @for (photo of thumbs(); track photo.index) {
+        <button
+          #thumb
+          type="button"
+          role="tab"
+          [class]="photo.classes"
+          [attr.aria-selected]="photo.selected"
+          [attr.aria-label]="photo.label"
+          [attr.tabindex]="photo.selected ? 0 : -1"
+          (click)="select(photo.index)"
+          (keydown)="onKeyDown($event)"
+        >
+          @if (photo.url) {
+            <img
+              class="h-full w-full object-cover"
+              [src]="photo.url"
+              alt=""
+              loading="lazy"
+              (error)="onError(photo.index)"
+            />
+          } @else {
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <path d="M21 15l-5-5L5 21"></path>
+              <line x1="3" y1="3" x2="21" y2="21"></line>
+            </svg>
+          }
+        </button>
+      }
+    </div>
+  }
+
+  <p class="sr-only" role="status" aria-live="polite">{{ liveText() }}</p>
+</div>

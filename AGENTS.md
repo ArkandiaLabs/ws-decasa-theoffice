@@ -164,6 +164,15 @@ y el mapeo completo de tokens; aquí solo va lo que no se deduce leyendo el cód
   paquete que los declara), y `pnpm.onlyBuiltDependencies` autoriza los scripts de instalación de
   `esbuild` y compañía. Sin cualquiera de las dos cosas el repo falla en verde aparente: `lint` o
   `build` se rompen con un mensaje que no menciona a pnpm.
+- **El listado consume `/api/v1` y la ficha `/api/v2`.** No está a medio migrar: `v2` es la única
+  versión que devuelve `images`, y el listado no la necesita porque `v1` ya le entrega la foto
+  principal ya derivada. `variants` llega en la respuesta de `v2` y se ignora a propósito: las
+  presentaciones no tienen interfaz y este no es el cambio que se la va a inventar.
+- **La galería abre en la foto `isPrimary`, no en la primera del arreglo.** El servidor ordena por
+  `sortOrder`, así que la principal puede estar en cualquier posición.
+- **La miniatura de la galería es flexible (44–120 px) y recorta en 3:2.** Los 44 px del mínimo
+  táctil son el suelo, no el tamaño: a 44×44 la foto es un borrón. No la vuelvas a fijar en el
+  mínimo aunque el mockup de Claude Design lo diga: allí las miniaturas eran iconos, no fotos.
 - **`pageSize` es 10 por decisión del frontend**, no el 6 que la API devuelve por defecto. Va
   explícito en cada petición.
 - **Los nombres de categoría llegan sin tildes** (`Papeleria`, `Tecnologia`). Se renderiza lo que
@@ -189,7 +198,8 @@ y el mapeo completo de tokens; aquí solo va lo que no se deduce leyendo el cód
   control. No las "corrijas" hacia el sistema de origen.
 - **`make web-design-classes` es la otra mitad de la compuerta del diseño.** `design-check` cubre
   `DESIGN.md → CSS`; este cubre `CSS → plantillas` y falla si una clase no resuelve. Necesita el CSS
-  compilado, por eso va después de `web-build` dentro de `make web`.
+  compilado, por eso va después de `web-build` dentro de `make web`. Descarta lo que va seguido de
+  `=`, para no confundir `stroke-width="1.5"` de un `<svg>` con una clase.
 - **`text-muted` no es una clase.** El token `text-muted` genera `text-text-muted`; escrito a secas
   cae en el namespace de tamaños de Tailwind, no genera nada y el elemento hereda el color del
   padre, **sin que build, lint ni pruebas lo reporten**. Igual con `text-faint`.

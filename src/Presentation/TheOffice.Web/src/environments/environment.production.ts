@@ -3,4 +3,5 @@ export const environment = {
   // Se sirve detras del mismo origen que reenvia /api a la API. Si el despliegue separa los
   // dominios, este es el unico sitio que hay que tocar.
   apiBaseUrl: '/api/v1',
+  apiV2BaseUrl: '/api/v2',
 };

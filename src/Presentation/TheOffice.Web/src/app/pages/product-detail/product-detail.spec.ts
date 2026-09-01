@@ -18,7 +18,11 @@ const product: ProductDetail = {
   name: 'Resma de papel carta 75 g',
   description: 'Papel bond de 75 gramos, resma por 500 hojas, tamaño carta.',
   price: 18900,
-  imageUrl: '/img/prd-001.jpg',
+  images: [
+    { publicId: 'PRD-001-IMG-1', url: '/img/prd-001-1.jpg', sortOrder: 0, isPrimary: true },
+    { publicId: 'PRD-001-IMG-2', url: '/img/prd-001-2.jpg', sortOrder: 1, isPrimary: false },
+    { publicId: 'PRD-001-IMG-3', url: '/img/prd-001-3.jpg', sortOrder: 2, isPrimary: false },
+  ],
   stock: 42,
   isActive: true,
   category: {
@@ -201,6 +205,24 @@ describe('ProductDetailPage', () => {
     await fixture.whenStable();
 
     expect(dom(fixture).querySelector('[data-testid="copy-status"]')?.textContent?.trim()).toBe('');
+  });
+
+  it('Render_ProductWithSeveralPhotos_HandsTheWholeGalleryToTheComponent', async () => {
+    const fixture = await render({ kind: 'ok', value: product });
+
+    expect(dom(fixture).querySelectorAll('app-product-gallery [role="tab"]').length).toBe(3);
+    expect(
+      dom(fixture).querySelector('app-product-gallery img[loading="eager"]')?.getAttribute('src'),
+    ).toBe('/img/prd-001-1.jpg');
+  });
+
+  // El catalogo tiene referencias con una sola toma, y ninguna es un error que haya que avisar.
+  it('Render_ProductWithoutPhotos_StillShowsTheProduct', async () => {
+    const fixture = await render({ kind: 'ok', value: { ...product, images: [] } });
+
+    expect(dom(fixture).querySelector('app-product-gallery')).toBeTruthy();
+    expect(dom(fixture).textContent).toContain('Sin imagen');
+    expect(dom(fixture).textContent).toContain('Resma de papel carta 75 g');
   });
 
   it('Render_Always_HasNoPurchaseCallToAction', async () => {

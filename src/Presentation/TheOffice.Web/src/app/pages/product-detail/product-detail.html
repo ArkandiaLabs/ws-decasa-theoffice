@@ -38,7 +38,15 @@
 
   @if (loading()) {
     <div class="grid gap-8 lg:grid-cols-[600px_1fr]">
-      <div class="aspect-3/2 w-full animate-pulse rounded-lg bg-border" aria-hidden="true"></div>
+      <div class="flex flex-col gap-2" aria-hidden="true">
+        <div class="aspect-3/2 w-full animate-pulse rounded-lg bg-border"></div>
+
+        <div class="flex gap-2">
+          <div class="h-11 w-11 animate-pulse rounded-sm bg-border"></div>
+          <div class="h-11 w-11 animate-pulse rounded-sm bg-border"></div>
+          <div class="h-11 w-11 animate-pulse rounded-sm bg-border"></div>
+        </div>
+      </div>
 
       <div class="flex flex-col gap-4" aria-hidden="true">
         <div class="h-6 w-32 animate-pulse rounded-sm bg-border"></div>
@@ -67,7 +75,7 @@
     />
   } @else if (product(); as product) {
     <div class="grid gap-8 lg:grid-cols-[600px_1fr]">
-      <app-product-image [src]="product.imageUrl" [alt]="product.name" size="detail" />
+      <app-product-gallery [images]="product.images" [productName]="product.name" />
 
       <div class="flex flex-col gap-4">
         <div class="flex flex-wrap items-center gap-3">

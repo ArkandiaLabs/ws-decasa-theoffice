@@ -1,4 +1,10 @@
-/** Espejo de los DTOs de la API v1. camelCase, como llega el JSON. */
+/**
+ * Espejo de los DTOs de la API. camelCase, como llega el JSON.
+ *
+ * El listado viene de v1 y la ficha de v2, que es la unica que devuelve la galeria. De la
+ * respuesta de v2 se modela lo que la pantalla usa: `variants` llega y se ignora, porque las
+ * presentaciones no tienen interfaz y no es este el cambio que se la va a inventar.
+ */
 
 export interface Category {
   readonly publicId: string;
@@ -18,13 +24,26 @@ export interface ProductListItem {
   readonly categorySlug: string;
 }
 
+export interface ProductImage {
+  readonly publicId: string;
+  /** Puede llegar cadena vacia. */
+  readonly url: string;
+  readonly sortOrder: number;
+  /**
+   * La foto que encabeza el producto en el listado. El servidor ordena la galeria por
+   * `sortOrder`, no por esta marca, asi que la principal no tiene por que ser la primera.
+   */
+  readonly isPrimary: boolean;
+}
+
 export interface ProductDetail {
   readonly publicId: string;
   readonly name: string;
   /** Texto plano, sin HTML. Nunca se pinta con innerHTML. */
   readonly description: string;
   readonly price: number;
-  readonly imageUrl: string;
+  /** Ya ordenadas por el servidor: `sortOrder` y, en empate, `publicId`. Puede venir vacia. */
+  readonly images: readonly ProductImage[];
   readonly stock: number;
   /** El detalle si devuelve inactivos; el listado no. */
   readonly isActive: boolean;

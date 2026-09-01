@@ -45,7 +45,7 @@ pnpm install    # una sola vez
 pnpm start      # terminal 2 — app en http://localhost:4200
 ```
 
-El navegador nunca ve el `5226`: la app pide `/api/v1` en su propio origen y
+El navegador nunca ve el `5226`: la app pide `/api` en su propio origen y
 [`proxy.conf.json`](./proxy.conf.json) lo reenvía. **Cero URLs absolutas de API en el código.**
 
 ## Comandos
@@ -83,7 +83,7 @@ siguen la convención del repo: inglés, `Method_Scenario_ExpectedResult`.
 
 Lo que cubren las unitarias y lo que no: el `CatalogService` prueba el `404` y la API caída; los
 componentes prueban los estados que **los datos semilla no producen** (`stock = 0`,
-`isActive = false`, `category: null`, `imageUrl` vacío).
+`isActive = false`, `category: null`, una URL de foto vacía, una galería sin fotos).
 
 Lo que **no** cubren: todo lo que solo se rompe en un navegador real. El foco visible, el
 desbordamiento a 360 px, el zoom al 200 %, la consola limpia. Eso se recorrió a mano con el MCP de
@@ -97,6 +97,19 @@ ella en cada control.
 
 El costo de esa decisión es que **la accesibilidad de teclado, los roles ARIA y el manejo de foco
 son nuestros**. El foco visible es global, en `styles.css`; no se redefine por componente.
+
+El componente donde más pesa es `ui/product-gallery`: lista de miniaturas con `role="tablist"`,
+`tabindex` móvil (solo la seleccionada está en el orden de tabulación), flechas y `Home`/`End` que
+recorren dando la vuelta, y una región `aria-live` que dice «Foto 2 de 4» porque cambiar de foto no
+mueve el foco por sí solo. El manejador de teclado vive en cada pestaña, no en la lista: un
+contenedor que nadie puede enfocar con un `keydown` colgado es exactamente lo que el lint señala.
+
+**La miniatura es flexible, entre 44 y 120 px de ancho, y recorta en 3:2 como la foto grande.** Los
+44 px del mínimo táctil son el suelo, no el tamaño: a ese tamaño una foto de producto es un borrón
+y la tira deja de servir para lo único que tiene que resolver, distinguir una toma de la de al
+lado. Con `flex-1` la tira reparte el ancho disponible, así que las fotos entran en una sola fila
+tanto en los 600 px de la columna de escritorio (120 × 80) como en un teléfono de 320 px (66 × 45),
+sin desbordarse y sin bajar del objetivo táctil.
 
 Tailwind v4 no usa `tailwind.config.js`: la configuración es el bloque `@theme`, y el build lo
 procesa vía [`.postcssrc.json`](./.postcssrc.json).
@@ -120,6 +133,10 @@ Tailwind emite toda clase que reconoce, así que «usada en la plantilla pero au
 compilado» solo puede significar que no la reconoció — y no falla, simplemente no genera nada.
 El check necesita el CSS compilado, así que corre **después** de `web-build`. Además vigila que
 `theme.css` no declare `--spacing-*`, el namespace que ensombrece la escala de contenedores.
+
+Un detalle del checker que se ve al meter el primer `<svg>`: descarta lo que va seguido de `=`,
+porque `stroke-width="1.5"` es un atributo de SVG y no una clase. Una clase dentro de `class="…"`
+nunca lleva `=` detrás, así que la exclusión no tapa ningún fallo real.
 
 [`src/styles.css`](./src/styles.css) importa el generado y se queda con lo que no es token: las
 fuentes de `@fontsource` y la capa base con el foco visible.
@@ -208,6 +225,12 @@ nada.
 
 ## Reglas no obvias
 
+- **El listado pide `v1` y la ficha pide `v2`.** No es una migración a medias: `v2` es la única
+  versión que devuelve `images`, la galería completa, y el listado no la necesita porque `v1` ya le
+  entrega la foto principal derivada. Las dos bases viven en `environments/environment.ts`.
+- **La galería abre en la foto marcada como principal, no en la primera.** El servidor ordena por
+  `sortOrder` y en empate por `publicId`; `isPrimary` es una marca aparte, así que la foto que el
+  comprador acaba de ver en la tarjeta puede estar en cualquier posición del arreglo.
 - **`pageSize` es 10 por decisión del frontend**, no el 6 que devuelve el servidor por defecto. Va
   explícito en cada petición, como constante `PAGE_SIZE` en `catalog.service.ts`.
 - **La búsqueda por SKU (`^PRD-\d{3}$` → navegar al detalle) vive solo en el cliente.** La API no
