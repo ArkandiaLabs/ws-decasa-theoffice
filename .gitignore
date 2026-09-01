@@ -413,3 +413,6 @@ src/.DS_Store
 !.env.example
 appsettings.Secrets.json
 appsettings.*.Secrets.json
+
+# Angular
+.angular/
