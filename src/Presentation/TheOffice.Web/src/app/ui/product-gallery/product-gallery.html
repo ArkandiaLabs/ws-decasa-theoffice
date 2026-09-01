@@ -1,0 +1,31 @@
+<app-product-image [src]="activeUrl()" [alt]="productName()" size="detail" />
+
+@if (hasStrip()) {
+  <div role="group" aria-label="Fotos del producto" class="mt-2 flex flex-wrap gap-2">
+    @for (photo of ordered(); track photo.publicId; let index = $index) {
+      <button
+        type="button"
+        [class]="thumbClass(index)"
+        [attr.aria-current]="isActive(index) ? 'true' : null"
+        [attr.aria-label]="'Ver foto ' + (index + 1) + ' de ' + total()"
+        (click)="onSelect(index)"
+      >
+        @if (isBroken(photo.publicId)) {
+          <span
+            class="flex h-full w-full items-center justify-center bg-border text-caption text-text-muted"
+          >
+            Sin imagen
+          </span>
+        } @else {
+          <img
+            class="h-full w-full object-cover"
+            [src]="photo.url"
+            alt=""
+            loading="lazy"
+            (error)="onThumbError(photo.publicId)"
+          />
+        }
+      </button>
+    }
+  </div>
+}

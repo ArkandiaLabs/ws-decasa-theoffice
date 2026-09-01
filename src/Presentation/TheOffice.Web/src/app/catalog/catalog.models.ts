@@ -18,6 +18,14 @@ export interface ProductListItem {
   readonly categorySlug: string;
 }
 
+/** Espejo de `ProductImageResponse` de la API v2. La v1 no expone la galeria. */
+export interface ProductPhoto {
+  readonly publicId: string;
+  readonly url: string;
+  readonly sortOrder: number;
+  readonly isPrimary: boolean;
+}
+
 export interface ProductDetail {
   readonly publicId: string;
   readonly name: string;
