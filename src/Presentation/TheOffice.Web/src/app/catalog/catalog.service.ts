@@ -23,6 +23,9 @@ export class CatalogService {
   private readonly http = inject(HttpClient);
   private readonly base = environment.apiBaseUrl;
 
+  /** La ficha vive en v2: es la unica version que devuelve la galeria completa del producto. */
+  private readonly baseV2 = environment.apiV2BaseUrl;
+
   getProducts(query: ProductQuery = {}): Observable<Fetched<PagedResult<ProductListItem>>> {
     let params = new HttpParams()
       .set('page', query.page ?? 1)
@@ -43,7 +46,7 @@ export class CatalogService {
 
   getProduct(publicId: string): Observable<Fetched<ProductDetail>> {
     return this.settle(
-      this.http.get<ProductDetail>(`${this.base}/products/${encodeURIComponent(publicId)}`),
+      this.http.get<ProductDetail>(`${this.baseV2}/products/${encodeURIComponent(publicId)}`),
     );
   }
 

@@ -19,7 +19,7 @@ import { CategoryChip } from '../../ui/category-chip/category-chip';
 import { DiscontinuedBadge } from '../../ui/discontinued-badge/discontinued-badge';
 import { EmptyState } from '../../ui/empty-state/empty-state';
 import { ErrorState } from '../../ui/error-state/error-state';
-import { ProductImage } from '../../ui/product-image/product-image';
+import { ProductGallery } from '../../ui/product-gallery/product-gallery';
 import { StockBadge } from '../../ui/stock-badge/stock-badge';
 
 /** `Fetched` mas el estado que no viene del servidor: la espera. */
@@ -48,7 +48,7 @@ const COPIED_MS = 2500;
     DiscontinuedBadge,
     EmptyState,
     ErrorState,
-    ProductImage,
+    ProductGallery,
     StockBadge,
   ],
   templateUrl: './product-detail.html',

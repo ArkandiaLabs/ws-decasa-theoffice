@@ -14,8 +14,11 @@ const SRC = join(ROOT, 'src/app');
 
 // Los prefijos que consumen tokens. Lo demas de Tailwind no lo cubre el sistema de diseno.
 const PREFIXES = 'bg|text|border|divide|font|rounded|shadow|outline|ring|fill|stroke';
+// El `(?!\s*=)` descarta los atributos que se llaman igual que un prefijo -- `stroke-width`,
+// `stroke-linecap` y companeros dentro de un <svg>. Una clase dentro de `class="..."` nunca va
+// seguida de `=`, asi que la exclusion no tapa ningun fallo real.
 const USED = new RegExp(
-  String.raw`\b((?:hover:|focus:|focus-visible:|active:|disabled:|sm:|md:|lg:|xl:)?(?:${PREFIXES})-[a-z][a-z0-9-]*)\b`,
+  String.raw`\b((?:hover:|focus:|focus-visible:|active:|disabled:|sm:|md:|lg:|xl:)?(?:${PREFIXES})-[a-z][a-z0-9-]*)\b(?!\s*=)`,
   'g',
 );
 
