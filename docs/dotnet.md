@@ -46,7 +46,7 @@ no usa sus tipos en los controllers.
   10.0.x igual o superior sirve; uno de .NET 9 u 11 no. Se eligió la banda más baja de 10.0 a
   propósito: fijar la versión instalada en una máquina deja fuera a quien tenga una banda anterior,
   y un pin que estorba se borra.
-- **Props de build compartidas:** `Directory.Build.props` en la raíz aplica a los siete proyectos.
+- **Props de build compartidas:** `Directory.Build.props` en la raíz aplica a los nueve proyectos.
   Ahí viven la postura del lenguaje, los analizadores, `TreatWarningsAsErrors`,
   `EnforceCodeStyleInBuild`, la auditoría de NuGet y `RestorePackagesWithLockFile` (ver §8).
   **No declara `<TargetFramework>`**: MSBuild importa ese archivo antes del cuerpo de cada
@@ -167,9 +167,10 @@ dotnet ef database update -p Infrastructure/TheOffice.Persistence -s Presentatio
   `Makefile` ya lo pasa.
 - **Framework de pruebas:** xUnit v3 (`xunit.v3.mtp-v2` 3.2.2). El proyecto es `<OutputType>Exe`,
   como exige MTP.
-- **Librerías de apoyo:** NSubstitute 6.0.0 para dobles. Las aserciones son las nativas de xUnit
-  (`Assert`), sin FluentAssertions. **No hay** cobertura, snapshot testing, `WebApplicationFactory`
-  ni Testcontainers.
+- **Librerías de apoyo:** NSubstitute 6.0.0 para dobles y `Microsoft.AspNetCore.Mvc.Testing`
+  10.0.10 para las de integración. Las aserciones son las nativas de xUnit (`Assert`), sin
+  FluentAssertions. **No hay** cobertura, snapshot testing ni Testcontainers: la base de las
+  pruebas de integración es SQLite en memoria, no un contenedor.
 - **Organización de las pruebas:** un proyecto por proyecto bajo prueba, con archivos que espejan
   el layout del código fuente (`Services/ProductServiceTests.cs`). Los nombres de prueba van en
   inglés, con el patrón `Method_Scenario_ExpectedResult` (los actuales siguen en español). Como los DTOs de respuesta son
@@ -178,8 +179,15 @@ dotnet ef database update -p Infrastructure/TheOffice.Persistence -s Presentatio
   entre todas. Usa ArchUnitNET 0.13.4 con la extensión `TngTech.ArchUnitNET.xUnitV3`, que es la que
   corresponde a xUnit v3 sobre MTP. Nueve reglas, detalladas en §8. `make test` lo corre con el
   resto; `make arch` lo corre solo.
-- **Cobertura actual:** `ProductService` (11 métodos, 16 casos) más 9 reglas de arquitectura — 25
-  pruebas en total. `CategoryService` y `CustomerService` siguen sin pruebas unitarias.
+- **Cobertura actual:** 121 pruebas en cuatro proyectos — `TheOffice.Application.Tests`
+  (`ProductService` y `CustomerService`), `TheOffice.Persistence.Tests` (`ProductRepository`
+  contra SQLite en memoria), `TheOffice.Api.Tests` (los cuatro controllers vía
+  `WebApplicationFactory<Program>`) y las 9 reglas de arquitectura. `CategoryService` sigue sin
+  pruebas unitarias propias: hoy es un `Select` sobre el repositorio, y sus dos rutas HTTP están
+  cubiertas por `CategoryControllerTests`.
+- **El analizador `xUnit1051` es una puerta más:** toda llamada async que acepte un
+  `CancellationToken` debe recibir `TestContext.Current.CancellationToken`, o el build falla. Vale
+  para `HttpClient` y para EF Core dentro de las pruebas; en `src/` siguen siendo cero.
 
 ## 8. Puertas de calidad
 
@@ -281,14 +289,20 @@ Prácticamente ausentes, y conviene no asumir lo contrario:
   `Persistence/Models/Product.cs` son clases distintas con el mismo nombre. Los repositorios las
   desambiguan con alias de using (`using DomainEntities = TheOffice.Domain.Entities;`). Nunca pases
   una donde se espera la otra; la traducción vive en `Persistence/Mappers/*`.
-- **`ProductController` no es testeable unitariamente**: depende de la clase concreta
-  `ProductService`, cuyos métodos no son `virtual`. Cubrirlo exige extraer un `IProductService` o
-  pruebas de integración con `WebApplicationFactory` — que a su vez necesitarían
-  `public partial class Program` en `Program.cs`, hoy ausente.
-- **El comportamiento del repositorio no está cubierto por pruebas.** El filtro `IsActive`, el trim
-  del slug, el `LIKE` de la búsqueda y el ordenamiento viven en `ProductRepository` y solo se
-  alcanzan con pruebas de integración contra SQLite in-memory (ojo con el `HasConversion<double>()`
-  de `Price` al montarlas).
+- **`ProductController` sigue sin ser testeable unitariamente**: depende de la clase concreta
+  `ProductService`, cuyos métodos no son `virtual`. Por eso se cubre con integración —
+  `tests/TheOffice.Api.Tests` — y no con dobles. `Program.cs` expone `public partial class Program`
+  al final del archivo solo para que `WebApplicationFactory<Program>` pueda nombrarlo.
+- **La fábrica de pruebas corre en `Development`**, porque es el único entorno donde `Program`
+  aplica `Database.Migrate()` al arrancar: así la base `:memory:` queda con esquema y semillas sin
+  montar nada aparte. Reemplaza **todos** los descriptores cuyo `ServiceType` contenga
+  `DbContextOptions` — `AddDbContext` deja más de uno, y dejar vivo cualquiera haría que las
+  pruebas escribieran sobre el archivo SQLite del repositorio.
+- **El comportamiento del repositorio sí está cubierto**, en `tests/TheOffice.Persistence.Tests`
+  contra SQLite en memoria: el filtro `IsActive`, el trim del slug, el `LIKE`, el orden alfabético,
+  el ida y vuelta del precio por el `HasConversion<double>()` y la paridad de la foto principal
+  entre `GetPagedList` y `ResolvePrimaryImageUrl`. `TestDatabase` **vacía las semillas de
+  `HasData`** tras crear el esquema, para que tocar un seeder no mueva un assert de orden.
 - **Los repositorios sí capturan excepciones**, pero solo para convertirlas en `Result.Failure`
   en las rutas de escritura (`try/catch (Exception ex)` en `Create`). Ese es el único lugar donde
   se atrapan excepciones; en servicios y controllers no se usa `try/catch` para control de flujo.

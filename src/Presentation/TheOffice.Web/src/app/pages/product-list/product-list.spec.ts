@@ -269,6 +269,98 @@ describe('ProductList', () => {
     expect(host.querySelector('[data-testid="product-grid"]')).toBeTruthy();
   });
 
+  // ---------- La URL como estado: leerla, no solo escribirla ----------
+
+  // Un enlace compartido tiene que abrir exactamente la pantalla que vio quien lo mando: los
+  // tres filtros salen de la URL en la primera peticion, sin un viaje intermedio sin filtrar.
+  it('Render_DeepLinkWithEveryFilter_RequestsTheCatalogWithThemOnTheFirstCall', async () => {
+    const { catalog } = await render({
+      url: '/productos?page=3&category=tecnologia&search=teclado',
+    });
+
+    expect(catalog.getProducts).toHaveBeenCalledTimes(1);
+    expect(lastQuery(catalog)).toEqual({
+      page: 3,
+      pageSize: PAGE_SIZE,
+      category: 'tecnologia',
+      search: 'teclado',
+    });
+  });
+
+  it('Render_DeepLinkWithASearchTerm_PutsItBackInTheSearchField', async () => {
+    const { host } = await render({ url: '/?search=resma' });
+
+    expect(searchInput(host).value).toBe('resma');
+  });
+
+  it('Render_DeepLinkWithACategory_MarksItsChipAndLeavesTodasInactive', async () => {
+    const { host } = await render({ url: '/?category=tecnologia' });
+
+    expect(chipByLabel(host, 'Tecnologia').getAttribute('aria-label')).toBe(
+      'Quitar filtro de Tecnologia',
+    );
+    expect(chipByLabel(host, 'Todas').getAttribute('aria-label')).toBeNull();
+  });
+
+  // `page` viene de una URL que cualquiera edita a mano. Nada de lo que no sea un entero
+  // desde 1 llega al servidor: se cae a la primera pagina y se pide igual.
+  it.each(['abc', '0', '-3', '2.5', ''])(
+    'Render_DeepLinkWithAnUnusablePage_FallsBackToTheFirstPage (page=%s)',
+    async (raw) => {
+      const { catalog } = await render({ url: `/?page=${raw}` });
+
+      expect(lastQuery(catalog).page).toBe(1);
+    },
+  );
+
+  // Las dependencias del efecto son los tres valores de la URL, no el objeto que se arma con
+  // ellos: navegar sin mover ningun filtro no vuelve a pedir el listado.
+  it('Navigate_ToTheSameFiltersOnAnotherPath_DoesNotRequestTheCatalogAgain', async () => {
+    const { fixture, router, catalog } = await render({ url: '/?category=papeleria' });
+    expect(catalog.getProducts).toHaveBeenCalledTimes(1);
+
+    await router.navigateByUrl('/productos?category=papeleria');
+    await fixture.whenStable();
+
+    expect(router.url).toBe('/productos?category=papeleria');
+    expect(catalog.getProducts).toHaveBeenCalledTimes(1);
+  });
+
+  // ---------- Respuestas fuera de orden ----------
+
+  /**
+   * El efecto cancela su suscripcion anterior en `onCleanup`. Sin eso, la respuesta lenta del
+   * filtro que el comprador ya abandono pisa la del filtro que si esta mirando, y la pantalla
+   * queda mostrando resultados que no corresponden a los chips marcados.
+   */
+  it('Change_TheFilterWhileARequestIsInFlight_IgnoresTheStaleResponse', async () => {
+    const stale = new Subject<ProductsResponse>();
+    const fresh = new Subject<ProductsResponse>();
+    const pending = [stale, fresh];
+    let call = 0;
+
+    const { host, fixture, catalog } = await render({
+      products: () => pending[call++].asObservable(),
+    });
+
+    chipByLabel(host, 'Tecnologia').click();
+    await fixture.whenStable();
+    expect(catalog.getProducts).toHaveBeenCalledTimes(2);
+
+    // La primera peticion responde tarde, con el catalogo sin filtrar.
+    stale.next({ kind: 'ok', value: paged([product('PRD-001', 'Resma de papel carta 75g')]) });
+    await fixture.whenStable();
+
+    expect(host.querySelector('[data-testid="product-grid"]')).toBeNull();
+    expect(host.querySelectorAll('app-skeleton-card')).toHaveLength(PAGE_SIZE);
+
+    fresh.next({ kind: 'ok', value: paged([product('PRD-010', 'Teclado mecanico inalambrico')]) });
+    await fixture.whenStable();
+
+    expect(host.textContent).toContain('Teclado mecanico inalambrico');
+    expect(host.textContent).not.toContain('Resma de papel carta 75g');
+  });
+
   it('Change_Pagination_WritesThePageOnTheUrlKeepingThePath', async () => {
     const { host, fixture, router, catalog } = await render({ url: '/productos' });
 

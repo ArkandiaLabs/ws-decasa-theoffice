@@ -81,3 +81,8 @@ var app = builder.Build();
   app.MapControllers();
   app.Run();
 }
+
+// Las instrucciones de nivel superior compilan a una clase `Program` interna y sin nombre que
+// otro ensamblado no puede escribir. `WebApplicationFactory<Program>` necesita nombrarla, asi
+// que se declara aqui como parcial y publica. No agrega comportamiento: solo la hace visible.
+public partial class Program { }
