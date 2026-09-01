@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 
 using TheOffice.Adapters;
+using TheOffice.Api.Middleware;
 using TheOffice.Application;
 using TheOffice.Persistence;
 
@@ -59,6 +60,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 var app = builder.Build();
 {
+  // Va primero para que envuelva todo lo demas: el status que registra al salir ya incluye lo
+  // que hizo el handler de excepciones.
+  app.UseMiddleware<RequestLoggingMiddleware>();
+
   if (app.Environment.IsDevelopment())
   {
     using (var scope = app.Services.CreateScope())
