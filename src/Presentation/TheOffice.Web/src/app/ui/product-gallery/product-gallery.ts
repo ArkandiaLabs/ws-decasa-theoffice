@@ -36,7 +36,9 @@ export class ProductGallery {
   // El servidor promete ordenar por SortOrder, pero el contrato ya se describio mal una vez: se
   // reordena aqui con su misma regla en vez de confiar.
   protected readonly ordered = computed(() =>
-    [...this.photos()].sort(
+    // `http.get<ProductDetail>` es un molde de compilacion, no una validacion: si la respuesta
+    // llega sin `images` el tipo miente y desparramarla tumbaria la ficha entera.
+    [...(this.photos() ?? [])].sort(
       (left, right) =>
         left.sortOrder - right.sortOrder || left.publicId.localeCompare(right.publicId),
     ),

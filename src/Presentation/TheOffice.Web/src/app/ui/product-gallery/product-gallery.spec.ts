@@ -69,6 +69,15 @@ describe('ProductGallery', () => {
     expect(dom().textContent).toContain('Sin imagen');
   });
 
+  // El tipo dice que `images` siempre viene; la respuesta HTTP no lo garantiza y el molde de
+  // TypeScript no valida nada en tiempo de ejecucion.
+  it('Render_PhotosMissingFromThePayload_DoesNotThrow', async () => {
+    await render(undefined as unknown as readonly ProductPhoto[]);
+
+    expect(thumbs()).toHaveLength(0);
+    expect(dom().textContent).toContain('Sin imagen');
+  });
+
   // El servidor promete ordenar por sortOrder; la ficha no depende de que lo cumpla.
   it('Render_UnsortedPhotos_OrdersThumbnailsBySortOrder', async () => {
     await render([photo(3), photo(1), photo(2)]);
