@@ -18,7 +18,11 @@ const product: ProductDetail = {
   name: 'Resma de papel carta 75 g',
   description: 'Papel bond de 75 gramos, resma por 500 hojas, tamaño carta.',
   price: 18900,
-  imageUrl: '/img/prd-001.jpg',
+  images: [
+    { publicId: 'PRD-001-IMG-1', url: '/img/prd-001-1.jpg', sortOrder: 0, isPrimary: true },
+    { publicId: 'PRD-001-IMG-2', url: '/img/prd-001-2.jpg', sortOrder: 1, isPrimary: false },
+    { publicId: 'PRD-001-IMG-3', url: '/img/prd-001-3.jpg', sortOrder: 2, isPrimary: false },
+  ],
   stock: 42,
   isActive: true,
   category: {
@@ -77,6 +81,23 @@ describe('ProductDetailPage', () => {
     const chip = dom(fixture).querySelector('app-category-chip a');
     expect(chip?.getAttribute('href')).toBe('/productos?category=papeleria');
     expect(chip?.textContent?.trim()).toBe('Papeleria');
+  });
+
+  it('Render_ProductWithPhotos_RendersTheGallery', async () => {
+    const fixture = await render({ kind: 'ok', value: product });
+
+    expect(dom(fixture).querySelectorAll('[role="group"] button')).toHaveLength(3);
+    expect(dom(fixture).querySelector('app-product-gallery img')?.getAttribute('src')).toBe(
+      '/img/prd-001-1.jpg',
+    );
+  });
+
+  // Una sola foto no habilita ningun control: es el caso de PRD-003 y PRD-015 en los seeds.
+  it('Render_ProductWithOnePhoto_ShowsNoGalleryControls', async () => {
+    const single = { ...product, images: [product.images[0]] };
+    const fixture = await render({ kind: 'ok', value: single });
+
+    expect(dom(fixture).querySelector('[role="group"]')).toBeNull();
   });
 
   it('Render_ProductWithoutCategory_HidesTheChipAndCollapsesTheBreadcrumb', async () => {

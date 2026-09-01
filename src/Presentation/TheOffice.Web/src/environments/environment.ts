@@ -5,4 +5,6 @@
 export const environment = {
   production: false,
   apiBaseUrl: '/api/v1',
+  // Solo la ficha la usa: v2 es la unica version que devuelve la galeria completa.
+  apiV2BaseUrl: '/api/v2',
 };

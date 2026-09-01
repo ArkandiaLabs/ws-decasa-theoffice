@@ -22,6 +22,8 @@ export const PAGE_SIZE = 10;
 export class CatalogService {
   private readonly http = inject(HttpClient);
   private readonly base = environment.apiBaseUrl;
+  // La ficha va contra v2: v1 solo expone `imageUrl`, una foto suelta.
+  private readonly baseV2 = environment.apiV2BaseUrl;
 
   getProducts(query: ProductQuery = {}): Observable<Fetched<PagedResult<ProductListItem>>> {
     let params = new HttpParams()
@@ -43,7 +45,7 @@ export class CatalogService {
 
   getProduct(publicId: string): Observable<Fetched<ProductDetail>> {
     return this.settle(
-      this.http.get<ProductDetail>(`${this.base}/products/${encodeURIComponent(publicId)}`),
+      this.http.get<ProductDetail>(`${this.baseV2}/products/${encodeURIComponent(publicId)}`),
     );
   }
 

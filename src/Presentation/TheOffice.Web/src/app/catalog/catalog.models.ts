@@ -1,4 +1,9 @@
-/** Espejo de los DTOs de la API v1. camelCase, como llega el JSON. */
+/**
+ * Espejo de los DTOs de la API. camelCase, como llega el JSON.
+ *
+ * El listado y las categorias son v1; `ProductDetail` es v2, la unica version que devuelve
+ * la galeria. Ver la regla no obvia del frontend en AGENTS.md.
+ */
 
 export interface Category {
   readonly publicId: string;
@@ -32,7 +37,8 @@ export interface ProductDetail {
   /** Texto plano, sin HTML. Nunca se pinta con innerHTML. */
   readonly description: string;
   readonly price: number;
-  readonly imageUrl: string;
+  /** Ordenada por `sortOrder`; la principal no es necesariamente la primera. */
+  readonly images: readonly ProductPhoto[];
   readonly stock: number;
   /** El detalle si devuelve inactivos; el listado no. */
   readonly isActive: boolean;

@@ -7,6 +7,7 @@ import { Fetched, PagedResult, ProductDetail, ProductListItem } from './catalog.
 import { CatalogService, PAGE_SIZE } from './catalog.service';
 
 const BASE = environment.apiBaseUrl;
+const BASE_V2 = environment.apiV2BaseUrl;
 
 const listItem: ProductListItem = {
   publicId: 'PRD-001',
@@ -107,7 +108,9 @@ describe('CatalogService', () => {
       name: 'Resma de papel carta 75g',
       description: 'Resma de 500 hojas tamano carta.',
       price: 18900,
-      imageUrl: '',
+      images: [
+        { publicId: 'PRD-001-IMG-1', url: '/img/prd-001.jpg', sortOrder: 0, isPrimary: true },
+      ],
       stock: 120,
       isActive: true,
       category: {
@@ -117,7 +120,7 @@ describe('CatalogService', () => {
         description: 'Papel, cuadernos y utiles.',
       },
     };
-    httpMock.expectOne(`${BASE}/products/PRD-001`).flush(detail);
+    httpMock.expectOne(`${BASE_V2}/products/PRD-001`).flush(detail);
 
     expect(result).toEqual({ kind: 'ok', value: detail });
   });
@@ -127,7 +130,7 @@ describe('CatalogService', () => {
     service.getProduct('PRD-042').subscribe((r) => (result = r));
 
     httpMock
-      .expectOne(`${BASE}/products/PRD-042`)
+      .expectOne(`${BASE_V2}/products/PRD-042`)
       .flush(null, { status: 404, statusText: 'Not Found' });
 
     expect(result).toEqual({ kind: 'not-found' });
@@ -138,7 +141,7 @@ describe('CatalogService', () => {
     service.getProduct('PRD-001').subscribe((r) => (result = r));
 
     httpMock
-      .expectOne(`${BASE}/products/PRD-001`)
+      .expectOne(`${BASE_V2}/products/PRD-001`)
       .flush(null, { status: 0, statusText: 'Unknown Error' });
 
     expect(result).toEqual({ kind: 'error' });
