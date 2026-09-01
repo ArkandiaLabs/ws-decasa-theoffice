@@ -50,4 +50,15 @@ public class ProductController : ControllerBase
 
     return Ok(result.Value);
   }
+
+  // Descarga la imagen del producto desde su URL y la devuelve en linea, para que el frontend
+  // pueda previsualizarla sin exponer el repositorio de medios directamente al navegador.
+  [HttpGet("{publicId}/preview")]
+  public async Task<IActionResult> Preview(string publicId, [FromQuery] string url)
+  {
+    using var http = new HttpClient();
+    var bytes = await http.GetByteArrayAsync(url);
+
+    return File(bytes, "image/jpeg");
+  }
 }
