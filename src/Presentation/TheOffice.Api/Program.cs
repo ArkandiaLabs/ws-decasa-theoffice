@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 
 using TheOffice.Adapters;
+using TheOffice.Api.Middleware;
 using TheOffice.Application;
 using TheOffice.Persistence;
 
@@ -43,11 +44,13 @@ var builder = WebApplication.CreateBuilder(args);
     {
       if (allowedOrigins.Length == 0)
       {
-        policy.AllowAnyOrigin();
+        // Refleja el Origin de la peticion para que cualquier frontend del catalogo funcione
+        // sin listar su dominio, y habilita credenciales para las cookies de sesion futuras.
+        policy.SetIsOriginAllowed(_ => true).AllowCredentials();
       }
       else
       {
-        policy.WithOrigins(allowedOrigins);
+        policy.WithOrigins(allowedOrigins).AllowCredentials();
       }
 
       policy.AllowAnyHeader().AllowAnyMethod();
@@ -57,6 +60,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 var app = builder.Build();
 {
+  // Va primero para que envuelva todo lo demas: el status que registra al salir ya incluye lo
+  // que hizo el handler de excepciones.
+  app.UseMiddleware<RequestLoggingMiddleware>();
+
   if (app.Environment.IsDevelopment())
   {
     using (var scope = app.Services.CreateScope())
@@ -77,7 +84,24 @@ var app = builder.Build();
     app.UseHttpsRedirection();
   }
 
+  // Un handler unico traduce cualquier excepcion no controlada a 500 con el detalle del error,
+  // para que el frontend pueda mostrar por que fallo en vez de un cuerpo vacio.
+  app.UseExceptionHandler(errorApp =>
+  {
+    errorApp.Run(async context =>
+    {
+      var feature = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
+      context.Response.StatusCode = 500;
+      await context.Response.WriteAsync(feature?.Error.ToString() ?? "Unknown error");
+    });
+  });
+
   app.UseCors(CorsPolicy);
   app.MapControllers();
   app.Run();
 }
+
+// Las instrucciones de nivel superior compilan a una clase `Program` interna y sin nombre que
+// otro ensamblado no puede escribir. `WebApplicationFactory<Program>` necesita nombrarla, asi
+// que se declara aqui como parcial y publica. No agrega comportamiento: solo la hace visible.
+public partial class Program { }

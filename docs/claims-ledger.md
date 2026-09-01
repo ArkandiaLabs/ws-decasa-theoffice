@@ -27,10 +27,10 @@ Actualizado: 2026-08-25 · rama `session-03` · tras instalar la instrumentació
 | `SQLitePCLRaw.bundle_e_sqlite3` y `Microsoft.OpenApi` son referencias directas para elevar transitivas con CVE. | `TheOffice.Persistence.csproj:10`, `TheOffice.Api.csproj:14` (comentarios) | alta | confirmada |
 | Ningún método async propaga `CancellationToken`. | `grep -r CancellationToken src/` → 0 resultados | alta | confirmada |
 | `GlobalConstants.TheOfficeDbContext` no tiene referencias en el repo. | `grep -r GlobalConstants` → 0 usos | alta | confirmada |
-| `ProductController` no es testeable unitariamente (depende de la clase concreta `ProductService`, sin métodos `virtual`). | `ProductController.cs:13`, `grep -r virtual src/` → 0 resultados | alta | confirmada |
-| `Program.cs` no expone `public partial class Program`, requisito de `WebApplicationFactory`. | `grep 'partial class Program'` → 0 resultados | alta | confirmada |
+| `ProductController` no es testeable unitariamente (depende de la clase concreta `ProductService`, sin métodos `virtual`); se cubre con integración. | `ProductController.cs:13`, `grep -r virtual src/` → 0 resultados; `tests/TheOffice.Api.Tests` | alta | confirmada |
+| `Program.cs` expone `public partial class Program` al final, requisito de `WebApplicationFactory`. | `Program.cs`, última línea; `tests/TheOffice.Api.Tests/ApiFactory.cs` | alta | confirmada |
 | La gestión de paquetes es centralizada: todas las versiones en `Directory.Packages.props`, ningún `<PackageReference>` con `Version`. | `Directory.Packages.props`, `src/**/*.csproj` | alta | confirmada |
-| Cada uno de los siete proyectos tiene un `packages.lock.json` versionado; `dotnet restore --locked-mode` falla con `NU1004` si derivan. | `**/packages.lock.json`; verificado rompiendo una versión a propósito | alta | confirmada |
+| Cada uno de los nueve proyectos tiene un `packages.lock.json` versionado; `dotnet restore --locked-mode` falla con `NU1004` si derivan. | `**/packages.lock.json`; verificado rompiendo una versión a propósito | alta | confirmada |
 | `global.json` fija el SDK en `10.0.100` con `rollForward: latestFeature`. | `global.json:3-4`; verificado pidiendo `10.0.500` y viendo fallar el build | alta | confirmada |
 | `TreatWarningsAsErrors`, `EnableNETAnalyzers` y `EnforceCodeStyleInBuild` están activos para toda la solución. | `Directory.Build.props`; verificado con una variable sin usar → `CS0219` como error | alta | confirmada |
 | Existe `.editorconfig` con indentación de 2 espacios, medida sobre los `.cs` existentes. | `.editorconfig`; 407 líneas con sangría de 2, 0 con tabuladores | alta | confirmada |

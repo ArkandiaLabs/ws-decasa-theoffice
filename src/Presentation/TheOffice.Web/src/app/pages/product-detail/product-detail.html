@@ -119,7 +119,7 @@
           </p>
         }
 
-        <p class="text-body text-foreground">{{ product.description }}</p>
+        <p class="text-body text-foreground" [innerHTML]="product.description"></p>
 
         @if (product.category; as category) {
           <div>

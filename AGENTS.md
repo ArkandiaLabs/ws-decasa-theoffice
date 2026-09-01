@@ -140,11 +140,21 @@ pegados en el chat:
 
 ## Pruebas
 
-xUnit v3 + NSubstitute, con las aserciones nativas de `Assert` (los DTOs de respuesta son `record`, así que `Assert.Equal` compara estructuralmente). Un proyecto de pruebas por proyecto bajo prueba, en `tests/`, con archivos que espejan el layout de `src/`. Los nombres de prueba van en **inglés**, como el resto del código: `Method_Scenario_ExpectedResult`. Las pruebas actuales de `ProductServiceTests` todavía están en español; renómbralas cuando toques el archivo.
+xUnit v3 + NSubstitute, con las aserciones nativas de `Assert` (los DTOs de respuesta son `record`, así que `Assert.Equal` compara estructuralmente). Un proyecto de pruebas por proyecto bajo prueba, en `tests/`, con archivos que espejan el layout de `src/`. Los nombres de prueba van en **inglés**, como el resto del código: `Method_Scenario_ExpectedResult`.
 
 `tests/TheOffice.ArchitectureTests` es la excepción a la regla de un proyecto de pruebas por proyecto bajo prueba: no prueba una capa, sino la relación entre todas. Usa ArchUnitNET y convierte la regla de dependencias de [arquitectura](./docs/architecture.md) en una prueba que se pone en rojo. `make test` lo corre junto con el resto; `make arch` lo corre solo.
 
-Un cambio se considera listo cuando tiene **pruebas unitarias de la capa Application y pruebas de integración** para repositorios y controllers. Hoy hay unitarias de `ProductService` y las de arquitectura; la integración (`WebApplicationFactory`, SQLite in-memory) aún no está montada y `Program.cs` no expone `public partial class Program`, que haría falta. Ver [`docs/dotnet.md`](./docs/dotnet.md) §7 y §12.
+Un cambio se considera listo cuando tiene **pruebas unitarias de la capa Application y pruebas de integración** para repositorios y controllers. Las tres capas están montadas:
+
+- `tests/TheOffice.Application.Tests` — unitarias de `ProductService` y `CustomerService` con NSubstitute. `CategoryService` sigue sin pruebas propias: hoy es un `Select` sobre el repositorio.
+- `tests/TheOffice.Persistence.Tests` — `ProductRepository` contra **SQLite en memoria**, con el esquema real. Es el único sitio donde se ejercitan el `.Where(IsActive)`, el trim del slug, el `LIKE`, el orden alfabético y el `HasConversion<double>()` de `Price`. `TestDatabase` abre la conexión y **vacía las semillas de `HasData`** para que cambiar un seeder no mueva un assert.
+- `tests/TheOffice.Api.Tests` — la API completa con `WebApplicationFactory<Program>` sobre la misma base en memoria. `Program.cs` expone `public partial class Program` solo para esto. El entorno es `Development` porque es el único donde `Program` aplica migraciones al arrancar. Aquí se prueba lo que no tiene otra vía: `ProductController` depende de la clase concreta `ProductService`, sin métodos `virtual`.
+
+**La paridad de la foto principal tiene prueba propia** (`GetPagedList_PrimaryImage_IsTheSameOneTheDetailResolves`): el listado la deriva en SQL y el detalle en memoria con `ResolvePrimaryImageUrl`. Si divergen, la misma referencia muestra una foto en la grilla y otra en la ficha. No toques una de las dos expresiones sin la otra.
+
+**El analizador `xUnit1051` obliga a pasar `TestContext.Current.CancellationToken`** a toda llamada async que acepte uno (`HttpClient`, EF Core). No contradice la regla de no hilar `CancellationToken` en `src/`: ahí siguen siendo cero.
+
+Ver [`docs/dotnet.md`](./docs/dotnet.md) §7 y §12.
 
 ## Frontend (`src/Presentation/TheOffice.Web`)
 

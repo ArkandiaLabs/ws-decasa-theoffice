@@ -52,20 +52,24 @@ public class ProductRepository : IProductRepository
   public async Task<(IReadOnlyList<ProductListItem> Items, int TotalItems)> GetPagedList(
     int page, int pageSize, string? categorySlug, string? search)
   {
+    // El filtro de texto se arma en SQL para que la busqueda pueda crecer a varias columnas
+    // sin encadenar Where sobre el arbol de expresiones.
+    var sql = "SELECT * FROM Products WHERE IsActive = 1";
+
+    if (!string.IsNullOrWhiteSpace(search))
+    {
+      var term = search.Trim();
+      sql += $" AND (Name LIKE '%{term}%' OR Description LIKE '%{term}%')";
+    }
+
     var query = _context.Products
-      .AsNoTracking()
-      .Where(x => x.IsActive);
+      .FromSqlRaw(sql)
+      .AsNoTracking();
 
     if (!string.IsNullOrWhiteSpace(categorySlug))
     {
       var slug = categorySlug.Trim();
       query = query.Where(x => x.Category.Slug == slug);
-    }
-
-    if (!string.IsNullOrWhiteSpace(search))
-    {
-      var term = $"%{search.Trim()}%";
-      query = query.Where(x => EF.Functions.Like(x.Name, term) || EF.Functions.Like(x.Description, term));
     }
 
     var totalItems = await query.CountAsync();
